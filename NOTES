@@ -1,0 +1,21 @@
+USAGE: food [SUBCOMMAND] [ARGUMENTS]
+
+Maintain and manage a set of recipes in git.
+
+MANAGING COMMANDS:
+
+  food init <dir>            Create a new git repo with recipes in it.
+
+SINGLE RECIPEES:
+
+  food add <name>            Add a new recipe and launch editor.
+  food edit <name>           Edit an existing recipe.
+  food rm                    Remove an existing recipe.
+
+LISTING AND VIEWING:
+
+  food list                  List all known recipes.
+  food grocery <name> [...]  Create a sorted & merged item list from the names
+                             for the next supermarket visit ready to print.
+  food serve                 Show a nice gallery of recipes on localhost:6666
+  food suggest [from[..to]]  Create a consistent food plan, starting at `from` until `to`.

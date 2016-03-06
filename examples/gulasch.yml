@@ -1,0 +1,30 @@
+Name: Rindergulasch         # Rezeptname.
+Persons: 1                  # Auf wieviele Personen gerechnet, optional.
+Images:                     # Liste von Bildern. Erstgenanntes wid als Coverbild genommen.
+    - images/gulasch.png
+    - images/nochimtopf.png
+Duration:
+    Preparation: 30m        # Vorbereitungszeit (marinieren, schnippeln...); optional
+    Cooking: 1h             # Reines Kochen
+    Total:   2h             # Totale Zeit (kann mehr als Preparation + Cooking sein)
+Ingredients:                # Zutatenliste.
+    - 250g Fleisch (Rind)   # Programm muss Menge parsen können. Klammern beeinhalten Details.
+    - 1 Paprika       
+    - 1 Zwiebeln
+    - 2 Zehen Knoblauch
+    - 100g Schmand
+    - 100ml Rotwein        
+Spices:                     # Zutaten, die nur als Gewürz dienen.
+    - Pfeffer
+    - Salz
+    - Rosenpaprika
+    - Worcestersauce
+Complementaries:            # Sonstiges, was man normal "da" hat oder optional ist.
+    - Mehl
+    - Öl
+Recipe:                     # Eigentliche Anleitung. Mit Markdown-Unterstützung?
+    - Zwiebeln in Würfel schneiden.
+    - Fleisch mit Mehl bestäuben und scharf anbraten.
+    - Parallel Zwiebeln und Knoblauch anbraten
+      und mit Rotwein angießen. Mit Fleisch zusammenführen.
+      **WICHTIG:** Knoblauch nicht zu lange anbraten, wird sonst bitterlich.

@@ -1,0 +1,37 @@
+Name: Filet Wellington      # Rezeptname.
+Category: Maindish
+Persons: 1                  # Auf wieviele Personen gerechnet, optional.
+Images:                     # Liste von Bildern. Erstgenanntes wid als Coverbild genommen.
+    - images/filet_wellington_1.jpg
+    - images/filet_wellington_2.jpg
+Duration:
+    Preparation: 30m        # Vorbereitungszeit (marinieren, schnippeln...); optional
+    Cooking: 1h             # Reines Kochen
+    Total: 1h 30m           # Totale Zeit (kann mehr als Preparation + Cooking sein)
+Ingredients:                # Zutatenliste.
+    - 150g Fleisch (Rind)   # Programm muss Menge parsen können. Klammern beeinhalten Details.
+    - Schinken (Schwein)
+    - 2 Kräutersaitlinge
+    - 2 Zwiebeln
+    - 2 Zehen Knoblauch
+    - 100ml Weißwein
+    - 1 Blätterteig
+    - Petersilie
+    - Kapern
+    - Ei
+Spices:                     # Zutaten, die nur als Gewürz dienen.
+    - Pfeffer
+    - Salz
+    - Kümmel
+Complementaries:            # Sonstiges, was man normal "da" hat oder optional ist.
+    - Senf
+    - Öl
+    - Butter
+Recipe:                     # Eigentliche Anleitung. Mit Markdown-Unterstützung?
+    - Zwiebeln und Kräutersaitlinge in Würfel schneiden.
+    - in Pfanne anbraten zusammen mit Knoblauch und Zwiebeln, Weißwein zugeben und reduzieren lassen
+    - Fleisch würzen und scharf anbraten an jeder Seite
+    - Blätterteig ausrollen, mit Scheibe Schinken belegen und mit Senf bestreichen
+    - Mischung aus Kräutersaitlingen und Zwiebeln aufbringen, Fleisch darauf legen
+    - Blätterteig zuklappen, sodass eine Tasche entsteht und mit Eigelb oder Butter bestreichen
+    - im Backofen bei 220 Grad für 25 Minuten backen bis Blätterteig goldgelb ist
