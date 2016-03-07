@@ -10,7 +10,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
+	"unicode"
 )
 
 type Recipe struct {
@@ -131,6 +134,7 @@ USAGE:
     hgy edit <name>
     hgy rm <name>
     hgy list
+    hgy grocery <names>...
     hgy -h | --help
 
 OPTIONS:
@@ -143,7 +147,7 @@ category:
 persons:
 images:
 duration:
-	preparation:
+    preparation:
     cooking:
     total:
 ingredients:
@@ -216,6 +220,49 @@ func main() {
 				log.Fatal(err)
 			}
 			fmt.Printf("%-35s%s\n", filename, r.Name)
+		}
+	} else if args["grocery"] == true {
+		names := args["<names>"].([]string)
+
+		sum := make(map[string]int)
+		for _, name := range names {
+			r := Recipe{}
+			if err := r.Parse(name); err != nil {
+				log.Fatal(err)
+			}
+
+			for _, ingredient := range r.Ingredients {
+				num := 0
+				substr := ""
+				for pos, char := range ingredient {
+					if !unicode.IsNumber(char) {
+						num, _ = strconv.Atoi(ingredient[0:pos])
+						substr = ingredient[pos:]
+						break
+					}
+				}
+				_, ok := sum[substr]
+				if !ok {
+					sum[substr] = num
+				} else {
+					sum[substr] += num
+				}
+			}
+		}
+
+		var keys []string
+		for key := range sum {
+			keys = append(keys, key)
+		}
+
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			if sum[key] == 0 {
+				fmt.Printf("%s\n", key)
+			} else {
+				fmt.Printf("%d%s\n", sum[key], key)
+			}
 		}
 	}
 }

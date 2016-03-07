@@ -1,8 +1,5 @@
 name: Rindergulasch
 persons: 1
-images:
-    - images/gulasch.png
-    - images/nochimtopf.png
 duration:
     preparation: 30m
     cooking: 1h
