@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/docopt/docopt-go"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -8,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 type Recipe struct {
@@ -34,8 +37,87 @@ func (r *Recipe) Parse(name string) error {
 			return err
 		}
 	}
-
 	return nil
+}
+
+type Commander struct {
+	IsNew    bool
+	Filename string
+	Recipe   Recipe
+}
+
+func (c *Commander) New(filename string) {
+	if _, err := os.Stat(filename); err != nil {
+		if ext := filepath.Ext(filename); ext != ".yml" {
+			filename += ".yml"
+		}
+		c.IsNew = true
+	}
+	c.Filename = filename
+}
+
+func (c *Commander) Add() {
+	if err := exec.Command("git", "add", c.Filename).Run(); err != nil {
+		c.Fail(fmt.Sprintf("Git add failed for %v (%v)", c.Filename, err))
+	}
+
+	if err := c.Recipe.Parse(c.Filename); err != nil {
+		c.Fail(fmt.Sprintf("Parsing failed for %v (%v)", c.Filename, err))
+	} else {
+		for _, image_name := range c.Recipe.Images {
+			if _, err := os.Stat(c.Filename); err == nil {
+				if err := exec.Command("git", "add", image_name).Run(); err != nil {
+					c.Fail(fmt.Sprintf("Git add failed for %v (%v). Does the file exists?", image_name, err))
+				}
+			}
+		}
+	}
+}
+
+func (c *Commander) WriteTemplate() {
+	if err := ioutil.WriteFile(c.Filename, []byte(template), 0666); err != nil {
+		c.Fail(fmt.Sprintf("Writing template for %v failed (%v)", c.Filename, err))
+	}
+}
+
+func (c *Commander) Edit() {
+	cmd := exec.Command("vim", c.Filename)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
+		c.Fail(fmt.Sprintf("Running vim to edit %v failed (%v)", c.Filename, err))
+	}
+}
+
+func (c *Commander) Fail(message string) {
+	if err := exec.Command("git", "reset").Run(); err != nil {
+		c.Fail(fmt.Sprintf("Git reset failed for %v (%v). Repo is in an undefined state!", c.Filename, err))
+	}
+	log.Fatal(message)
+}
+
+func (c *Commander) Remove() {
+	if err := c.Recipe.Parse(c.Filename); err != nil {
+		c.Fail(fmt.Sprintf("Parsing failed for %v (%v)", c.Filename, err))
+	} else {
+		for _, image_name := range c.Recipe.Images {
+			if _, err := os.Stat(c.Filename); err == nil {
+				if err := exec.Command("git", "rm", image_name).Run(); err != nil {
+					c.Fail(fmt.Sprintf("Git rm failed for %v (%v). Does the file exists?", image_name, err))
+				}
+			}
+		}
+	}
+
+	if err := exec.Command("git", "rm", c.Filename).Run(); err != nil {
+		c.Fail(fmt.Sprintf("Git remove failed for %v (%v)", c.Filename, err))
+	}
+}
+
+func (c *Commander) Commit(message string) {
+	if err := exec.Command("git", "commit", "-m", message+" "+c.Filename).Run(); err != nil {
+		c.Fail(fmt.Sprintf("Git commit failed for %v (%v)", c.Filename, err))
+	}
 }
 
 var usage = `
@@ -56,21 +138,18 @@ OPTIONS:
 `
 
 var template = `
-name:                       # name of the recipe
-category:                   # maindish,
-persons:                    # how many persons are the ingredients for.
-images:                     # ist of images. First will be taken as cover.
-duration:                   # time for preparation, cooking and total.
-    preparation:            # format: [[[0-9](h|m)][0-9](h|m)]
-    cooking:                # example: 1h 30m
-    total:                  #      or: 30m
-ingredients:                # list of ingredients with and without quantity
-                            # example:
-                            #    - 250g pork
-                            #    - 1 cup mushrooms
-spices:                     # list of spices
-complementaries:            # list of complementaries
-recipe:                     # step-by-step instrutions for preparation and cooking
+name:
+category:
+persons:
+images:
+duration:
+	preparation:
+    cooking:
+    total:
+ingredients:
+spices:
+complementaries:
+recipe:
 `
 
 func main() {
@@ -89,92 +168,54 @@ func main() {
 			log.Fatal(err)
 		}
 	} else if args["add"] == true {
-		name := args["<name>"].(string)
+		c := Commander{}
+		c.New(args["<name>"].(string))
 
-		if _, err := os.Stat(name); err == nil {
-			if err := exec.Command("git", "add", name).Run(); err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			if ext := filepath.Ext(name); ext != ".yml" {
-				name += ".yml"
-			}
-			cmd := exec.Command("vim", name)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			if err := cmd.Run(); err != nil {
-				log.Fatal(err)
-			}
-			if err := exec.Command("git", "add", name).Run(); err != nil {
-				log.Fatal(err)
-			}
+		if c.IsNew {
+			c.WriteTemplate()
+			c.Edit()
 		}
 
-		r := Recipe{}
-		if err := r.Parse(name); err != nil {
-			log.Fatal(err)
-		} else {
-			for _, image_name := range r.Images {
-				if err := exec.Command("git", "add", image_name).Run(); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
-
-		if err := exec.Command("git", "commit", "-m", "Added new recipe "+name).Run(); err != nil {
-			log.Fatal(err)
-		}
+		c.Add()
+		c.Commit("Added new recipe")
 	} else if args["edit"] == true {
-		name := args["<name>"].(string)
-
-		if ext := filepath.Ext(name); ext != ".yml" {
-			name += ".yml"
-		}
-		cmd := exec.Command("vim", name)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		if err := cmd.Run(); err != nil {
-			log.Fatal(err)
-		}
-
-		r := Recipe{}
-		if err := r.Parse(name); err != nil {
-			log.Fatal(err)
-		} else {
-			for _, image_name := range r.Images {
-				if err := exec.Command("git", "add", image_name).Run(); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
-
-		if err := exec.Command("git", "add", name).Run(); err != nil {
-			log.Fatal(err)
-		}
-
-		if err := exec.Command("git", "commit", "-m", "Changed recipe "+name).Run(); err != nil {
-			log.Fatal(err)
-		}
+		c := Commander{}
+		c.New(args["<name>"].(string))
+		c.Edit()
+		c.Add()
+		c.Commit("Changed recipe")
 	} else if args["rm"] == true {
-		name := args["<name>"].(string)
+		c := Commander{}
+		c.New(args["<name>"].(string))
 
-		r := Recipe{}
-		if err := r.Parse(name); err != nil {
-			log.Fatal(err)
+		if c.IsNew {
+			log.Fatal("Recipe doesn`t exists (", c.Filename, ")")
 		} else {
-			for _, image_name := range r.Images {
-				if err := exec.Command("git", "rm", image_name).Run(); err != nil {
-					log.Fatal(err)
-				}
+			c.Remove()
+			c.Commit("Removed recipe")
+		}
+	} else if args["list"] == true {
+		var outputBuffer bytes.Buffer
+
+		c1 := exec.Command("git", "ls-files")
+		c2 := exec.Command("grep", ".yml$")
+
+		c2.Stdin, _ = c1.StdoutPipe()
+		c2.Stdout = &outputBuffer
+
+		c2.Start()
+		c1.Run()
+		c2.Wait()
+
+		for _, filename := range strings.Split(outputBuffer.String(), "\n") {
+			if filename == "" {
+				continue
 			}
-		}
-
-		if err := exec.Command("git", "rm", name).Run(); err != nil {
-			log.Fatal(err)
-		}
-
-		if err := exec.Command("git", "commit", "-m", "Added new recipe "+name).Run(); err != nil {
-			log.Fatal(err)
+			r := Recipe{}
+			if err := r.Parse(filename); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%-35s%s\n", filename, r.Name)
 		}
 	}
 }
