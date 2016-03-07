@@ -1,15 +1,15 @@
-Name: Filet Wellington      # Rezeptname.
-Category: Maindish
-Persons: 1                  # Auf wieviele Personen gerechnet, optional.
-Images:                     # Liste von Bildern. Erstgenanntes wid als Coverbild genommen.
+name: Filet Wellington
+category: Maindish
+persons: 1
+images:
     - images/filet_wellington_1.jpg
     - images/filet_wellington_2.jpg
-Duration:
-    Preparation: 30m        # Vorbereitungszeit (marinieren, schnippeln...); optional
-    Cooking: 1h             # Reines Kochen
-    Total: 1h 30m           # Totale Zeit (kann mehr als Preparation + Cooking sein)
-Ingredients:                # Zutatenliste.
-    - 150g Fleisch (Rind)   # Programm muss Menge parsen können. Klammern beeinhalten Details.
+duration:
+    preparation: 30m
+    cooking: 1h
+    total: 1h 30m
+ingredients:
+    - 150g Fleisch (Rind)
     - Schinken (Schwein)
     - 2 Kräutersaitlinge
     - 2 Zwiebeln
@@ -19,15 +19,15 @@ Ingredients:                # Zutatenliste.
     - Petersilie
     - Kapern
     - Ei
-Spices:                     # Zutaten, die nur als Gewürz dienen.
+spices:
     - Pfeffer
     - Salz
     - Kümmel
-Complementaries:            # Sonstiges, was man normal "da" hat oder optional ist.
+complementaries:
     - Senf
     - Öl
     - Butter
-Recipe:                     # Eigentliche Anleitung. Mit Markdown-Unterstützung?
+recipe:
     - Zwiebeln und Kräutersaitlinge in Würfel schneiden.
     - in Pfanne anbraten zusammen mit Knoblauch und Zwiebeln, Weißwein zugeben und reduzieren lassen
     - Fleisch würzen und scharf anbraten an jeder Seite
