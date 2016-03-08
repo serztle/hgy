@@ -66,13 +66,14 @@ func (c *Commander) Add() {
 
 	if err := c.Recipe.Parse(c.Filename); err != nil {
 		c.Fail(fmt.Sprintf("Parsing failed for %v (%v)", c.Filename, err))
-	} else {
-		for _, image_name := range c.Recipe.Images {
-			if _, err := os.Stat(c.Filename); err == nil {
-				if err := exec.Command("git", "add", image_name).Run(); err != nil {
-					c.Fail(fmt.Sprintf("Git add failed for %v (%v). Does the file exists?", image_name, err))
-				}
-			}
+	}
+
+	for _, image_name := range c.Recipe.Images {
+		if _, err := os.Stat(image_name); err != nil {
+			continue
+		}
+		if err := exec.Command("git", "add", image_name).Run(); err != nil {
+			c.Fail(fmt.Sprintf("Git add failed for %v (%v). Does the file exists?", image_name, err))
 		}
 	}
 }
@@ -102,13 +103,14 @@ func (c *Commander) Fail(message string) {
 func (c *Commander) Remove() {
 	if err := c.Recipe.Parse(c.Filename); err != nil {
 		c.Fail(fmt.Sprintf("Parsing failed for %v (%v)", c.Filename, err))
-	} else {
-		for _, image_name := range c.Recipe.Images {
-			if _, err := os.Stat(c.Filename); err == nil {
-				if err := exec.Command("git", "rm", image_name).Run(); err != nil {
-					c.Fail(fmt.Sprintf("Git rm failed for %v (%v). Does the file exists?", image_name, err))
-				}
-			}
+	}
+
+	for _, image_name := range c.Recipe.Images {
+		if _, err := os.Stat(image_name); err != nil {
+			continue
+		}
+		if err := exec.Command("git", "rm", image_name).Run(); err != nil {
+			c.Fail(fmt.Sprintf("Git rm failed for %v (%v). Does the file exists?", image_name, err))
 		}
 	}
 
