@@ -43,6 +43,14 @@ func (r *Recipe) Parse(name string) error {
 	return nil
 }
 
+func (r *Recipe) String() string {
+	content, err := yaml.Marshal(r)
+	if err != nil {
+		log.Fatal("Converting recipe to yaml failed (", err, ")")
+	}
+	return string(content)
+}
+
 type Commander struct {
 	IsNew    bool
 	Filename string
@@ -79,7 +87,8 @@ func (c *Commander) Add() {
 }
 
 func (c *Commander) WriteTemplate() {
-	if err := ioutil.WriteFile(c.Filename, []byte(template), 0666); err != nil {
+	r := Recipe{}
+	if err := ioutil.WriteFile(c.Filename, []byte(r.String()), 0666); err != nil {
 		c.Fail(fmt.Sprintf("Writing template for %v failed (%v)", c.Filename, err))
 	}
 }
@@ -125,7 +134,7 @@ func (c *Commander) Commit(message string) {
 	}
 }
 
-var usage = `
+const usage = `
 hgy [SUBCOMMAND] [ARGUMENTS]
 
 Maintain and manage a set of recipes in git.
@@ -141,21 +150,6 @@ USAGE:
 
 OPTIONS:
     -h --help  Show this screen
-`
-
-var template = `
-name:
-category:
-persons:
-images:
-duration:
-    preparation:
-    cooking:
-    total:
-ingredients:
-spices:
-complementaries:
-recipe:
 `
 
 func main() {
