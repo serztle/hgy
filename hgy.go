@@ -165,7 +165,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if args["init"] == true {
+	switch {
+	case args["init"] == true:
 		if args["<dir>"] != nil {
 			os.Chdir(args["<dir>"].(string))
 		}
@@ -173,7 +174,7 @@ func main() {
 		if err := exec.Command("git", "init").Run(); err != nil {
 			log.Fatal(err)
 		}
-	} else if args["add"] == true {
+	case args["add"] == true:
 		c := Commander{}
 		c.New(args["<name>"].(string))
 
@@ -184,13 +185,13 @@ func main() {
 
 		c.Add()
 		c.Commit("Added new recipe")
-	} else if args["edit"] == true {
+	case args["edit"] == true:
 		c := Commander{}
 		c.New(args["<name>"].(string))
 		c.Edit()
 		c.Add()
 		c.Commit("Changed recipe")
-	} else if args["rm"] == true {
+	case args["rm"] == true:
 		c := Commander{}
 		c.New(args["<name>"].(string))
 
@@ -200,7 +201,7 @@ func main() {
 			c.Remove()
 			c.Commit("Removed recipe")
 		}
-	} else if args["list"] == true {
+	case args["list"] == true:
 		var outputBuffer bytes.Buffer
 
 		c1 := exec.Command("git", "ls-files")
@@ -223,7 +224,7 @@ func main() {
 			}
 			fmt.Printf("%-35s%s\n", filename, r.Name)
 		}
-	} else if args["grocery"] == true {
+	case args["grocery"] == true:
 		names := args["<names>"].([]string)
 
 		sum := make(map[string]int)
