@@ -1,5 +1,8 @@
 name: Rindergulasch
 persons: 1
+images:
+    - images/filet_wellington_2.jpg
+    - images/filet_wellington_1.jpg
 duration:
     preparation: 30m
     cooking: 1h

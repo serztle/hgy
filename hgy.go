@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/docopt/docopt-go"
 	"gopkg.in/yaml.v2"
+	"html/template"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -138,6 +140,46 @@ func (c *Commander) Commit(message string) {
 	}
 }
 
+const index_template = `
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+div.img {
+    margin: 5px;
+    border: 1px solid #ccc;
+    float: left;
+    width: 180px;
+}
+
+div.img:hover {
+    border: 1px solid #777;
+}
+
+div.img img {
+    width: 100%;
+    height: auto;
+}
+
+div.desc {
+    padding: 15px;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+{{range .}}
+    <div class="img">
+      <a target="_blank" href="images/{{index .Images 0}}">
+        <img src="images/{{index .Images 0}}" alt="{{.Name}}" width="300" height="200">
+      </a>
+      <div class="desc">{{.Name}}</div>
+    </div>
+{{end}}
+</body>
+</html>
+`
+
 const usage = `
 hgy [SUBCOMMAND] [ARGUMENTS]
 
@@ -150,11 +192,57 @@ USAGE:
     hgy rm <name>
     hgy list
     hgy grocery <names>...
+	hgy serve
     hgy -h | --help
 
 OPTIONS:
     -h --help  Show this screen
 `
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.New("index").Parse(index_template)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var outputBuffer bytes.Buffer
+	var recipes []Recipe
+
+	c1 := exec.Command("git", "ls-files")
+	c2 := exec.Command("grep", ".yml$")
+
+	c2.Stdin, _ = c1.StdoutPipe()
+	c2.Stdout = &outputBuffer
+
+	c2.Start()
+	c1.Run()
+	c2.Wait()
+
+	for _, filename := range strings.Split(outputBuffer.String(), "\n") {
+		if filename == "" {
+			continue
+		}
+		r := Recipe{}
+		if err := r.Parse(filename); err != nil {
+			log.Fatal(err)
+		}
+		recipes = append(recipes, r)
+	}
+
+	t.Execute(w, &recipes)
+}
+
+func imageHandler(w http.ResponseWriter, r *http.Request) {
+	image_path := r.RequestURI[8:]
+	data, err := ioutil.ReadFile(image_path)
+
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Error reading image %s (%v)", image_path, err))
+	}
+
+	w.Write(data)
+}
 
 func main() {
 	args, err := docopt.Parse(usage, nil, true, "hgy v0.01", false)
@@ -265,5 +353,9 @@ func main() {
 				fmt.Printf("%d%s\n", sum[key], key)
 			}
 		}
+	case args["serve"] == true:
+		http.HandleFunc("/", indexHandler)
+		http.HandleFunc("/images/", imageHandler)
+		http.ListenAndServe(":8080", nil)
 	}
 }
