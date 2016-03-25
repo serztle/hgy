@@ -170,10 +170,10 @@ div.desc {
 <body>
 {{range .}}
     <div class="img">
-      <a target="_blank" href="images/{{index .Images 0}}">
-        <img src="images/{{index .Images 0}}" alt="{{.Name}}" width="300" height="200">
+      <a target="_blank" href="{{index .Recipe.Images 0}}">
+        <img src="{{index .Recipe.Images 0}}" alt="{{.Recipe.Name}}" width="300" height="200">
       </a>
-      <div class="desc">{{.Name}}</div>
+      <div class="desc">{{.Recipe.Name}}</div>
     </div>
 {{end}}
 </body>
@@ -192,7 +192,7 @@ USAGE:
     hgy rm <name>
     hgy list
     hgy grocery <names>...
-	hgy serve
+    hgy serve
     hgy -h | --help
 
 OPTIONS:
@@ -206,19 +206,45 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+	recipes := getRecipies()
+	t.Execute(w, &recipes)
+}
+
+func imageHandler(w http.ResponseWriter, r *http.Request) {
+	image_path := r.RequestURI[1:]
+	data, err := ioutil.ReadFile(image_path)
+
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Error reading image %s (%v)", image_path, err))
+	}
+
+	w.Write(data)
+}
+
+func getRecipies() []Commander {
+	var err error
 	var outputBuffer bytes.Buffer
-	var recipes []Recipe
 
 	c1 := exec.Command("git", "ls-files")
 	c2 := exec.Command("grep", ".yml$")
 
-	c2.Stdin, _ = c1.StdoutPipe()
+	if c2.Stdin, err = c1.StdoutPipe(); err != nil {
+		log.Fatal(err)
+	}
+
 	c2.Stdout = &outputBuffer
 
-	c2.Start()
-	c1.Run()
-	c2.Wait()
+	if err = c2.Start(); err != nil {
+		log.Fatal(err)
+	}
+	if err = c1.Run(); err != nil {
+		log.Fatal(err)
+	}
+	if err = c2.Wait(); err != nil {
+		log.Fatal(err)
+	}
 
+	var result []Commander
 	for _, filename := range strings.Split(outputBuffer.String(), "\n") {
 		if filename == "" {
 			continue
@@ -227,21 +253,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		if err := r.Parse(filename); err != nil {
 			log.Fatal(err)
 		}
-		recipes = append(recipes, r)
+		result = append(result, Commander{false, filename, r})
 	}
 
-	t.Execute(w, &recipes)
-}
-
-func imageHandler(w http.ResponseWriter, r *http.Request) {
-	image_path := r.RequestURI[8:]
-	data, err := ioutil.ReadFile(image_path)
-
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Error reading image %s (%v)", image_path, err))
-	}
-
-	w.Write(data)
+	return result
 }
 
 func main() {
@@ -288,27 +303,8 @@ func main() {
 			c.Commit("Removed recipe")
 		}
 	case args["list"] == true:
-		var outputBuffer bytes.Buffer
-
-		c1 := exec.Command("git", "ls-files")
-		c2 := exec.Command("grep", ".yml$")
-
-		c2.Stdin, _ = c1.StdoutPipe()
-		c2.Stdout = &outputBuffer
-
-		c2.Start()
-		c1.Run()
-		c2.Wait()
-
-		for _, filename := range strings.Split(outputBuffer.String(), "\n") {
-			if filename == "" {
-				continue
-			}
-			r := Recipe{}
-			if err := r.Parse(filename); err != nil {
-				log.Fatal(err)
-			}
-			fmt.Printf("%-35s%s\n", filename, r.Name)
+		for _, r := range getRecipies() {
+			fmt.Printf("%-35s%s\n", r.Filename, r.Recipe.Name)
 		}
 	case args["grocery"] == true:
 		names := args["<names>"].([]string)
@@ -354,6 +350,7 @@ func main() {
 			}
 		}
 	case args["serve"] == true:
+		fmt.Print("Visit http://localhost:8080\n")
 		http.HandleFunc("/", indexHandler)
 		http.HandleFunc("/images/", imageHandler)
 		http.ListenAndServe(":8080", nil)
