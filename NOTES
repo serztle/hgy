@@ -19,3 +19,24 @@ LISTING AND VIEWING:
                              for the next supermarket visit ready to print.
   food serve                 Show a nice gallery of recipes on localhost:6666
   food suggest [from[..to]]  Create a consistent food plan, starting at `from` until `to`.
+
+BUGS / FEATURES:
+    
+  init - Wenn Verzeichnis nicht exisitiert wird kein Fehler ausgeben
+  init - Bilder ins Verzeichnis kopieren
+  add - Bilder Option (nicht mehr yml-Datei)
+  add - Datei ins Verzeichnis kopieren
+  add - Schlüssel in yml-Datei wird nicht beachtet
+  grocery - "Für wieviele Personen"-Option
+  grocery - Über der Liste, ausgeben für wieviele Personen, die Zutaten sind
+  grocery - Intelligente metrische Umrechnung
+  serve - Rezept Detailansicht
+  serve - Statische HTML-Ausgabe
+  global - Enviroment Variable für Pfad
+  mv - Neues Befehl
+  cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
+         Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
+         (ncurses?)
+  suggest - Essensplan
+  export - Nimmt Essensplan von suggest entgegen / Exporttyp (Liste auf Konsole,
+  Taskwarrior Schnittstelle, PDF, HTML)

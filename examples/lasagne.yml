@@ -1,0 +1,45 @@
+name: Lasagne nach Ur-Elchscher Art         
+persons: 4                   
+images:                      
+duration:
+    preparation: 30m        
+    cooking: 30m             
+    total:   1h 30m          
+ingredients:                 
+    - 500g Fleisch (gemischt)    
+    - Grüne Lasagneblätter
+    - 2 Zwiebeln       
+    - 5 Zehen Knoblauch
+    - 1 Bund Suppengemüse (2 Karotten, 1/4 Sellerie, 1 Lauch)
+    - 1 Bund Petersilie
+    - 2 Tomaten
+    - 2 EL Tomatenmark
+    - 500 ml passierte Tomaten
+    - 300 ml Rotwein o. Weißwein (trocken)       
+    - Käse (Mozaralla, Parmesan)
+    - Milch
+    - Butter
+spices:                     
+    - Pfeffer
+    - Salz
+    - Majoran
+    - Muskatnuß
+complementaries:            
+    - Mehl
+    - Öl
+    - 200 ml Brühe
+recipe:                     
+    - Zwiebeln in Würfel schneiden.
+    - Knoblauch fein hacken.
+    - Karotten, Sellerie, Petersilie, Tomaten, Lauch schneiden
+    - Zwiebeln und Gemüse anbraten, Knoblauch gegen Ende zugeben
+    - Fleisch scharf anbraten und mit Majoran, Pfeffer und Salz würzen
+    - Gemüse mit Wein angießen und einkochen lassen
+    - Brühe, passierte Tomaten und Tomatenmark dazugeben und 10min köcheln lassen
+    - Gegen Ende Petersilie und Hackfleisch dazu geben
+    - "Bechamelsoße: Butter im Topf zerlassen, mit Mehl bestäuben und bräunen lassen"
+    - Milch und Parmesan langsam dazugeben, mit Salz und Muskatnuß würzen und eindicken lassen
+    - "Schichtung: Bolognesesoße, Lasagneblätter, Bechamelsoße, Parmesan (rekursiv)"
+    - "On Top: Mozarella und Parmesan"
+    - Für 20-30 min bei 180 Grad Umluft
+    - "Hinweis: Falls Käse zu braun wird, mit Alufolie abdecken"
