@@ -269,9 +269,18 @@ func main() {
 	switch {
 	case args["init"] == true:
 		if args["<dir>"] != nil {
-			os.Chdir(args["<dir>"].(string))
+			dir := args["<dir>"].(string)
+			if stat, err := os.Stat(dir); os.IsNotExist(err) {
+				if err := os.Mkdir(dir, os.ModePerm); err != nil {
+					log.Fatal(err)
+				}
+			} else if !stat.IsDir() {
+				log.Fatal(fmt.Sprintf("%s allready exists and is not a directory!", dir))
+			}
+			if err := os.Chdir(dir); err != nil {
+				log.Fatal(err)
+			}
 		}
-
 		if err := exec.Command("git", "init").Run(); err != nil {
 			log.Fatal(err)
 		}

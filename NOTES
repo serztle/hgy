@@ -22,7 +22,6 @@ LISTING AND VIEWING:
 
 BUGS / FEATURES:
     
-  init - Wenn Verzeichnis nicht exisitiert wird kein Fehler ausgeben
   init - Bilder ins Verzeichnis kopieren
   add - Bilder Option (nicht mehr yml-Datei)
   add - Datei ins Verzeichnis kopieren
