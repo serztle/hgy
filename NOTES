@@ -1,28 +1,31 @@
-USAGE: food [SUBCOMMAND] [ARGUMENTS]
+USAGE: hgy [SUBCOMMAND] [ARGUMENTS]
 
 Maintain and manage a set of recipes in git.
 
 MANAGING COMMANDS:
 
-  food init <dir>            Create a new git repo with recipes in it.
+  hgy init <dir>            Create a new git repo with recipes in it.
 
 SINGLE RECIPEES:
 
-  food add <name>            Add a new recipe and launch editor.
-  food edit <name>           Edit an existing recipe.
-  food rm                    Remove an existing recipe.
+  hgy add <name>                 Add a new recipe and launch editor.
+  hgy set <name> default image   Set a new default image
+  hgy edit <name>                Edit an existing recipe.
+  hgy rm                         Remove an existing recipe.
 
 LISTING AND VIEWING:
 
-  food list                  List all known recipes.
-  food grocery <name> [...]  Create a sorted & merged item list from the names
-                             for the next supermarket visit ready to print.
-  food serve                 Show a nice gallery of recipes on localhost:6666
-  food suggest [from[..to]]  Create a consistent food plan, starting at `from` until `to`.
+  hgy list                  List all known recipes.
+  hgy grocery <name> [...]  Create a sorted & merged item list from the names
+                            for the next supermarket visit ready to print.
+  hgy serve                 Show a nice gallery of recipes on localhost:6666
+  hgy serve --static <dir>  Saves static html pages in the given directory
+  hgy suggest [from[..to]]  Create a consistent hgy plan, starting at `from` until `to`.
 
 BUGS / FEATURES:
     
-  init - Bilder ins Verzeichnis kopieren
+  add - Wenn ein existierendes Rezept, dann "Update..."
+  add - Bilder ins Verzeichns kopieren
   add - Bilder Option (nicht mehr yml-Datei)
   add - Datei ins Verzeichnis kopieren
   add - Schlüssel in yml-Datei wird nicht beachtet
@@ -32,7 +35,7 @@ BUGS / FEATURES:
   serve - Rezept Detailansicht
   serve - Statische HTML-Ausgabe
   global - Enviroment Variable für Pfad
-  mv - Neues Befehl
+  mv - Neuer Befehl
   cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
          Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
          (ncurses?)
