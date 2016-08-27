@@ -1,13 +1,13 @@
-Name: Schwäbischer Kartoffelsalat      # Rezeptname.
-Category: Sidedish
-Persons: 4                  # Auf wieviele Personen gerechnet, optional.
-Images:                     # Liste von Bildern. Erstgenanntes wid als Coverbild genommen.
-    - images/SchwaebischerKartoffelsalat.jpg
-Duration:
+name: Schwäbischer Kartoffelsalat      # Rezeptname.
+category: Sidedish
+persons: 4                  # Auf wieviele Personen gerechnet, optional.
+images:                     # Liste von Bildern. Erstgenanntes wid als Coverbild genommen.
+    - images/schwaebischer_kartoffelsalat_1.jpg
+duration:
     Preparation: 30m        # Vorbereitungszeit (marinieren, schnippeln...); optional
     Cooking: 1h             # Reines Kochen
     Total:   2h 00m         # Totale Zeit (kann mehr als Preparation + Cooking sein)
-Ingredients:                # Zutatenliste.
+ingredients:                # Zutatenliste.
     - 1kg Kartoffeln festkochend   # Programm muss Menge parsen können. Klammern beeinhalten Details.
     - 200g Speck
     - 200ml Rinderbrühe      
@@ -15,15 +15,15 @@ Ingredients:                # Zutatenliste.
     - Feldsalat
     - 3 Zwiebeln
     - 8 Gewürtzgurken
-Spices:                     # Zutaten, die nur als Gewürz dienen.
+spices:                     # Zutaten, die nur als Gewürz dienen.
     - Pfeffer
     - Salz
     - Muskat
-Complementaries:            # Sonstiges, was man normal "da" hat oder optional ist.
+complementaries:            # Sonstiges, was man normal "da" hat oder optional ist.
     - Senf
     - Öl
     - Essig
-Recipe:                     # Eigentliche Anleitung. Mit Markdown-Unterstützung?
+recipe:                     # Eigentliche Anleitung. Mit Markdown-Unterstützung?
     - Kartoffeln 45 Minuten kochen, abschälen und schneiden
     - Zwiebeln, Gewürzgurken und Speck schneiden
     - zu erst Speck und dann in der selben Pfanne anschließend Zwiebeln anbraten

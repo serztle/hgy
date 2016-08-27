@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. ./scripts/test/setup
+
+hgy init
+hgy add gulasch /tmp/examples/gulasch.yml
+hgy add gulasch /tmp/examples/gulasch.yml
+hgy add --force gulasch /tmp//examples/gulasch.yml
+
+for recipe in `ls /tmp/examples/*.yml`; do
+    hgy add `basename $recipe` $recipe
+done
+hgy add aelgsons_versuchung /tmp/examples/aelgsons_versuchung.yml --image /tmp/examples/images/auberginen_2.jpg --image /tmp/examples/images/auberginen_3.jpg
+hgy add --quiet recipe_dummy1
+hgy add --quiet sidedish/recipe_dummy2

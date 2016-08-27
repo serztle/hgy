@@ -24,17 +24,9 @@ LISTING AND VIEWING:
 
 BUGS / FEATURES:
     
-  add - Wenn ein existierendes Rezept, dann "Update..."
-  add - Bilder ins Verzeichns kopieren
-  add - Bilder Option (nicht mehr yml-Datei)
-  add - Datei ins Verzeichnis kopieren
-  add - Schlüssel in yml-Datei wird nicht beachtet
-  grocery - "Für wieviele Personen"-Option
-  grocery - Über der Liste, ausgeben für wieviele Personen, die Zutaten sind
+  add - Schlüssel in yml-Datei wird nicht beachtet???
   grocery - Intelligente metrische Umrechnung
-  serve - Rezept Detailansicht
   serve - Statische HTML-Ausgabe
-  global - Enviroment Variable für Pfad
   mv - Neuer Befehl
   cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
          Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)

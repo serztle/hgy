@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. ./scripts/test/setup
+
+hgy init
+for recipe in `ls /tmp/examples/*.yml`; do
+    hgy add `basename $recipe` $recipe
+done
+hgy grocery --persons 1 filet_wellington.yml
+hgy grocery --persons 2 filet_wellington.yml
+hgy grocery --persons 3 filet_wellington.yml
+hgy grocery --persons 4 filet_wellington.yml
+hgy grocery --persons 5 filet_wellington.yml
+hgy grocery --persons 10 filet_wellington.yml
+hgy grocery --persons 20 filet_wellington.yml

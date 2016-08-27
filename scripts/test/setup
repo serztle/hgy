@@ -1,0 +1,10 @@
+#!/bin/env sh
+set -x
+set -e
+make
+export PATH=$PATH:`pwd`
+export HGY_DIR=/tmp/hgy
+cp examples /tmp -R
+rm -rf $HGY_DIR
+mkdir -p $HGY_DIR
+set +e

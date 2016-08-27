@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. ./scripts/test/setup
+
+hgy init
+for recipe in `ls /tmp/examples/*.yml`; do
+    hgy add `basename $recipe` $recipe
+done
+xdg-open http://localhost:8080
+hgy serve
