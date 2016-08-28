@@ -14,6 +14,7 @@ const baseTemplate = `
 <html>
 <head>
 <title>{{.Title}}</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <style>
 div.img {
     margin: 5px;
@@ -54,8 +55,8 @@ const indexTemplate = `
 {{range .Recipes}}
 	<div class="img">
 		{{if (ge (len .Data.Images) 1) }}
-			<a target="_blank" href="detail/{{.Name}}">
-			  <img src="{{index .Data.Images 0}}" alt="{{.Data.Name}}" width="300" height="200">
+			<a target="_blank" href="detail/{{.Name}}.html">
+			  <img src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}" width="300" height="200">
 			</a>
 		{{end}}
 		<a class="seamless" href="detail/{{.Name}}">
@@ -74,10 +75,6 @@ const detailTemplate = `
 	</ul>
 {{end}}
 {{define "body"}}
-<html>
-    <head>
-        <title>{{.Recipe.Data.Name}}</title>
-    </head>
     <h1 class="title">{{.Recipe.Data.Name}}</h1>
 
     <div class="duration">
@@ -106,13 +103,12 @@ const detailTemplate = `
 		<h2>Images</h2>
         {{range .Recipe.Data.Images}}
         <div class="img">
-            <a target="_blank" href="/{{.}}">
-                <img src="/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
+            <a target="_blank" href="{{$.Root}}/{{.}}">
+                <img src="{{$.Root}}/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
             </a>
         </div>
         {{end}}
     </div>
-</html>
 {{end}}
 `
 
@@ -146,10 +142,12 @@ func (hh httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func indexHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
+func renderIndex(context *httpContext, root string) (bytes.Buffer, error) {
+	var html bytes.Buffer
+
 	t, err := template.New("index").Parse(baseTemplate + indexTemplate)
 	if err != nil {
-		return 500, err
+		return html, err
 	}
 
 	var recipes []Recipe
@@ -158,53 +156,73 @@ func indexHandler(context *httpContext, w http.ResponseWriter, r *http.Request) 
 		recipe.Name = recipeName
 		recipePath := filepath.Join(context.hgyDir, recipeName)
 		if err := recipe.Parse(recipePath); err != nil {
-			return 500, err
+			return html, err
 		}
 		recipes = append(recipes, recipe)
 	}
 
 	var data struct {
 		Title   string
+		Root    string
 		Recipe  Recipe
 		Recipes []Recipe
 	}
 
 	data.Title = "Overview"
+	data.Root = root
 	data.Recipes = recipes
 
-	var html bytes.Buffer
 	if err := t.Execute(&html, data); err != nil {
+		return html, err
+	} else {
+		return html, nil
+	}
+}
+
+func indexHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
+	if html, err := renderIndex(context, ""); err != nil {
 		return 500, err
 	} else {
 		return w.Write(html.Bytes())
 	}
 }
 
-func detailHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
-	recipeName := r.RequestURI[8:]
+func renderDetail(context *httpContext, root string, recipeName string) (bytes.Buffer, error) {
+	var html bytes.Buffer
 
 	t, err := template.New("detail").Parse(baseTemplate + detailTemplate)
 	if err != nil {
-		return 500, err
+		return html, err
 	}
 
 	recipe := RecipeNew(context.hgyDir, recipeName)
 	recipe.Name = recipeName
 	if err := recipe.Load(); err != nil {
-		return 500, err
+		return html, err
 	}
 
 	var data struct {
 		Title   string
+		Root    string
 		Recipe  Recipe
 		Recipes []Recipe
 	}
 
 	data.Title = recipe.Data.Name
+	data.Root = root
 	data.Recipe = recipe
 
-	var html bytes.Buffer
 	if err := t.Execute(&html, data); err != nil {
+		return html, err
+	} else {
+		return html, nil
+	}
+}
+
+func detailHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
+	recipeName := r.RequestURI[8 : len(r.RequestURI)-5]
+
+	if html, err := renderDetail(context, "", recipeName); err != nil {
 		return 500, err
 	} else {
 		return w.Write(html.Bytes())

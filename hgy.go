@@ -25,8 +25,8 @@ USAGE:
     hgy edit <name>
     hgy rm <name>
     hgy list
-    hgy grocery [--persons <persons>] <names>...
-    hgy serve
+    hgy grocery [(--persons <persons>)] <names>...
+    hgy serve [(--static <dir>)]
     hgy -h | --help
 OPTIONS:
     -h --help		     Show this screen
@@ -34,6 +34,7 @@ OPTIONS:
 	-f --force           Disables safeguards
 	-q --quiet           Do not ask the user 
 	--persons <persons>  For how many persons to you want to cook [default: 2]
+	--static <dir>       Render static html pages in given directory
 `
 
 func Fail(err error) {
@@ -328,10 +329,40 @@ func main() {
 		}
 	case args["serve"] == true:
 		context := &httpContext{hgyDir, index}
-		fmt.Println("Visit http://localhost:8080")
-		http.Handle("/", httpHandler{context, indexHandler})
-		http.Handle("/detail/", httpHandler{context, detailHandler})
-		http.Handle("/.images/", httpHandler{context, imageHandler})
-		http.ListenAndServe(":8080", nil)
+		if args["--static"] != nil {
+			dir := filepath.Clean(args["--static"].(string))
+			indexPage, err := renderIndex(context, dir)
+			Fail(err)
+			Fail(os.MkdirAll(dir, 0700))
+			Fail(ioutil.WriteFile(filepath.Join(dir, "index.html"), indexPage.Bytes(), 0600))
+			Fail(os.MkdirAll(filepath.Join(dir, "detail"), 0700))
+			for recipeName := range index.Recipes {
+				detailPage, err := renderDetail(context, dir, recipeName)
+				Fail(err)
+				Fail(ioutil.WriteFile(filepath.Join(dir, "detail", recipeName+".html"), detailPage.Bytes(), 0600))
+			}
+			Fail(filepath.Walk(filepath.Join(hgyDir, ".images"), func(path string, info os.FileInfo, err error) error {
+				relPath, err := filepath.Rel(hgyDir, path)
+				if err != nil {
+					return err
+				}
+				destPath := filepath.Join(dir, relPath)
+				err = os.MkdirAll(filepath.Dir(destPath), 0700)
+				if err != nil {
+					return err
+				}
+				if info.Mode().IsRegular() {
+					return CopyFile(path, destPath)
+				} else {
+					return nil
+				}
+			}))
+		} else {
+			fmt.Println("Visit http://localhost:8080")
+			http.Handle("/", httpHandler{context, indexHandler})
+			http.Handle("/detail/", httpHandler{context, detailHandler})
+			http.Handle("/.images/", httpHandler{context, imageHandler})
+			http.ListenAndServe(":8080", nil)
+		}
 	}
 }
