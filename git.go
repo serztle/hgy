@@ -68,7 +68,7 @@ func (g *Git) Init() error {
 }
 
 func (g *Git) Add(filename string) error {
-	return g.Exec("add", filename)
+	return g.Exec("add", "-A", filename)
 }
 
 func (g *Git) HasChanges(cached bool) bool {

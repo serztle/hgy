@@ -23,6 +23,7 @@ USAGE:
     hgy init [<hgydir>]
     hgy add [--force --quiet] <name> [<path>] [(--image <image>)...]
     hgy edit <name>
+	hgy mv <name> <new-name>
     hgy rm <name>
     hgy list
     hgy grocery [(--persons <persons>)] <names>...
@@ -241,6 +242,35 @@ func main() {
 			}
 		} else {
 			fmt.Printf("Info: No Recipe with the name '%s' exists\n", name)
+		}
+	case args["mv"] == true:
+		name := args["<name>"].(string)
+		newName := args["<new-name>"].(string)
+
+		Fail(os.Rename(
+			filepath.Join(hgyDir, name),
+			filepath.Join(hgyDir, newName),
+		))
+		Fail(os.Rename(
+			filepath.Join(hgyDir, ".images", name),
+			filepath.Join(hgyDir, ".images", newName),
+		))
+
+		index.RecipeRemove(name)
+		index.RecipeAdd(newName)
+		index.Save()
+
+		git := GitNew(hgyDir)
+		git.Fail(git.Add(index.Filename()))
+		git.Fail(git.Add(name))
+		git.Fail(git.Add(filepath.Join(".images", name)))
+		git.Fail(git.Add(newName))
+		git.Fail(git.Add(filepath.Join(".images", newName)))
+
+		if git.HasChanges(true) {
+			git.Fail(git.Commit("Recipe moved"))
+		} else {
+			fmt.Println("Info: No changes. Nothing to do.")
 		}
 	case args["rm"] == true:
 		name := args["<name>"].(string)

@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. ./scripts/test/setup
+
+hgy init
+for recipe in `ls /tmp/examples/*.yml`; do
+    hgy add `basename $recipe` $recipe
+done
+hgy mv gulasch.yml gulasch

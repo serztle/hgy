@@ -25,7 +25,6 @@ LISTING AND VIEWING:
 BUGS / FEATURES:
     
   grocery - Intelligente metrische Umrechnung
-  mv - Neuer Befehl
   cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
          Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
          (ncurses?)
