@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. ./scripts/test/setup
+
+hgy init
+for recipe in `ls /tmp/examples/*.yml`; do
+    hgy add `basename $recipe` $recipe
+done
+hgy suggest
+hgy suggest 20160801
+hgy suggest 20160801 20160815

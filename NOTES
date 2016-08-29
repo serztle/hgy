@@ -28,6 +28,4 @@ BUGS / FEATURES:
   cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
          Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
          (ncurses?)
-  suggest - Essensplan
-  export - Nimmt Essensplan von suggest entgegen / Exporttyp (Liste auf Konsole,
-  Taskwarrior Schnittstelle, PDF, HTML)
+  export - Nimmt Essensplan von suggest entgegen / Exporttyp (Taskwarrior, PDF, HTML)

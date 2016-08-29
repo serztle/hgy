@@ -3,14 +3,17 @@ package main
 import (
 	"fmt"
 	"github.com/docopt/docopt-go"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
+	"time"
 	"unicode"
 )
 
@@ -28,6 +31,7 @@ USAGE:
     hgy list
     hgy grocery [(--persons <persons>)] <names>...
     hgy serve [(--static <dir>)]
+	hgy suggest [<from>] [<to>]
     hgy -h | --help
 OPTIONS:
     -h --help		     Show this screen
@@ -364,12 +368,20 @@ func main() {
 			indexPage, err := renderIndex(context, dir)
 			Fail(err)
 			Fail(os.MkdirAll(dir, 0700))
-			Fail(ioutil.WriteFile(filepath.Join(dir, "index.html"), indexPage.Bytes(), 0600))
+			Fail(ioutil.WriteFile(
+				filepath.Join(dir, "index.html"),
+				indexPage.Bytes(),
+				0600,
+			))
 			Fail(os.MkdirAll(filepath.Join(dir, "detail"), 0700))
 			for recipeName := range index.Recipes {
 				detailPage, err := renderDetail(context, dir, recipeName)
 				Fail(err)
-				Fail(ioutil.WriteFile(filepath.Join(dir, "detail", recipeName+".html"), detailPage.Bytes(), 0600))
+				Fail(ioutil.WriteFile(
+					filepath.Join(dir, "detail", recipeName+".html"),
+					detailPage.Bytes(),
+					0600,
+				))
 			}
 			Fail(filepath.Walk(filepath.Join(hgyDir, ".images"), func(path string, info os.FileInfo, err error) error {
 				relPath, err := filepath.Rel(hgyDir, path)
@@ -394,5 +406,46 @@ func main() {
 			http.Handle("/.images/", httpHandler{context, imageHandler})
 			http.ListenAndServe(":8080", nil)
 		}
+	case args["suggest"] == true:
+		if len(index.Recipes) == 0 {
+			Fail(fmt.Errorf("No recipes found!"))
+		}
+
+		rand.Seed(time.Now().UnixNano())
+
+		format := "20060102"
+		from := time.Now()
+		if args["<from>"] != nil {
+			from, err = time.Parse(format, args["<from>"].(string))
+			Fail(err)
+		}
+		days := len(index.Recipes)
+		to := time.Now()
+		if args["<to>"] != nil {
+			to, err = time.Parse(format, args["<to>"].(string))
+			days = int(math.Floor(to.Sub(from).Hours() / 24.0))
+			Fail(err)
+		}
+
+		var indexes []int
+		var recipeNames []string
+		for recipeName := range index.Recipes {
+			recipeNames = append(recipeNames, recipeName)
+		}
+		idx := len(index.Recipes)
+		dateToRecipe := make(map[string]string)
+		for day := 0; day <= days; day++ {
+			if idx >= len(recipeNames) {
+				indexes = rand.Perm(len(recipeNames))
+				idx = 0
+			}
+			stamp := from.Add(time.Hour * 24 * time.Duration(day))
+			dateToRecipe[stamp.Format(format)] = recipeNames[indexes[idx]]
+			idx++
+		}
+
+		content, err := yaml.Marshal(dateToRecipe)
+		Fail(err)
+		os.Stdout.Write(content)
 	}
 }
