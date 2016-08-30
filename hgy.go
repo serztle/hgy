@@ -174,7 +174,7 @@ func main() {
 			}
 		} else {
 			if args["<path>"] != nil {
-				Fail(fmt.Errorf("Recipe '%s' already exists. A <path> is not valid in this context", name))
+				Fail(fmt.Errorf("Recipe '%s' already exists", name))
 			}
 		}
 

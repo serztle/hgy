@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 hgy init
 for recipe in `ls /tmp/examples/*.yml`; do
-    hgy add `basename $recipe` $recipe
+    basename=${recipe##*/}
+    basename=${basename%.yml}
+    hgy add $basename $recipe
 done
