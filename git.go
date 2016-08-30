@@ -71,6 +71,10 @@ func (g *Git) Add(filename string) error {
 	return g.Exec("add", "-A", filename)
 }
 
+func (g *Git) Remove(filename string) error {
+	return g.Exec("rm", filename)
+}
+
 func (g *Git) HasChanges(cached bool) bool {
 	var args []string
 	if cached {

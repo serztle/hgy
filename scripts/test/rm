@@ -6,3 +6,4 @@ hgy add gulasch /tmp/examples/gulasch.yml
 hgy add filet /tmp/examples/filet_wellington.yml
 hgy rm filet
 hgy rm gulasch
+hgy rm foobar

@@ -36,6 +36,9 @@ div.desc {
     padding: 15px;
     text-align: center;
 }
+a {
+   outline: 0;
+}
 a.seamless:link,
 a.seamless:visited,
 a.seamless:active {
@@ -59,7 +62,7 @@ const indexTemplate = `
 			  <img src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}" width="300" height="200">
 			</a>
 		{{end}}
-		<a class="seamless" href="detail/{{.Name}}">
+		<a class="seamless" href="detail/{{.Name}}.html">
 			<div class="desc">{{.Data.Name}}</div>
 		</a>
 	</div>

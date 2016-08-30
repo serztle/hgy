@@ -24,22 +24,25 @@ Maintain and manage a set of recipes in git.
 
 USAGE:
     hgy init [<hgydir>]
-    hgy add [--force --quiet] <name> [<path>] [(--image <image>)...]
+    hgy add [--force --quiet] <name> [(--image <image>)...]
+    hgy add [--force --quiet] <name> <path> [(--image <image>)...]
     hgy edit <name>
-	hgy mv <name> <new-name>
+    hgy mv [--force] <name> <new-name>
     hgy rm <name>
-    hgy list
+    hgy list [--images]
     hgy grocery [(--persons <persons>)] <names>...
     hgy serve [(--static <dir>)]
-	hgy suggest [<from>] [<to>]
+    hgy suggest [<from>] [<to>]
     hgy -h | --help
+	hgy --version
 OPTIONS:
-    -h --help		     Show this screen
-	-i --image <image>   Path to a image file
-	-f --force           Disables safeguards
-	-q --quiet           Do not ask the user 
-	--persons <persons>  For how many persons to you want to cook [default: 2]
-	--static <dir>       Render static html pages in given directory
+    -h --help            Show this screen
+    -i --image <image>   Path to a image file
+    -f --force           Disables safeguards
+    -q --quiet           Do not ask the user 
+    --persons <persons>  For how many persons to you want to cook [default: 2]
+    --static <dir>       Render static html pages in given directory
+	--images             Lists also all images
 `
 
 func Fail(err error) {
@@ -143,27 +146,35 @@ func main() {
 	switch {
 	case args["add"] == true:
 		name := args["<name>"].(string)
+		recipeExists := index.RecipeExists(name)
 		pathName, err := filepath.Abs(filepath.Join(hgyDir, name))
-		Fail(err)
-		Fail(os.MkdirAll(filepath.Dir(pathName), 0700))
 
-		if !args["--force"].(bool) {
-			Fail(GuardExists(pathName))
-		}
-
-		var pathSrc string
+		pathSrc := ""
 		recipe := Recipe{}
-		if args["<path>"] != nil {
-			path, err := filepath.Abs(args["<path>"].(string))
-			pathSrc = filepath.Dir(path)
+		if !recipeExists {
 			Fail(err)
-			Fail(recipe.Parse(path))
-			Fail(recipe.Save(pathName))
+			Fail(os.MkdirAll(filepath.Dir(pathName), 0700))
+
+			if !args["--force"].(bool) {
+				Fail(GuardExists(pathName))
+			}
+
+			if args["<path>"] != nil {
+				path, err := filepath.Abs(args["<path>"].(string))
+				pathSrc = filepath.Dir(path)
+				Fail(err)
+				Fail(recipe.Parse(path))
+				Fail(recipe.Save(pathName))
+			} else {
+				pathSrc = hgyDir
+				recipe.Save(pathName)
+				if !args["--quiet"].(bool) {
+					Fail(Edit(pathName))
+				}
+			}
 		} else {
-			pathSrc = hgyDir
-			recipe.Save(pathName)
-			if !args["--quiet"].(bool) {
-				Fail(Edit(pathName))
+			if args["<path>"] != nil {
+				Fail(fmt.Errorf("Recipe '%s' already exists. A <path> is not valid in this context", name))
 			}
 		}
 
@@ -177,6 +188,32 @@ func main() {
 			name,
 		)
 		Fail(os.MkdirAll(imagePath, 0700))
+
+		if !recipeExists {
+			for _, image := range recipe.Data.Images {
+				imagePathSrc := filepath.Join(
+					pathSrc,
+					image,
+				)
+				imagePathDest := filepath.Join(
+					imagePath,
+					filepath.Base(image),
+				)
+				Fail(CopyFile(
+					imagePathSrc,
+					imagePathDest,
+				))
+				relPath, err := filepath.Rel(hgyDir, imagePathDest)
+				Fail(err)
+				images = append(images, relPath)
+				git.Fail(git.Add(imagePathDest))
+			}
+		} else {
+			for _, image := range recipe.Data.Images {
+				images = append(images, image)
+			}
+		}
+
 		if args["--image"] != nil {
 			if argImages, ok := args["--image"].([]string); ok {
 				for _, argImage := range argImages {
@@ -190,28 +227,13 @@ func main() {
 					))
 					relPath, err := filepath.Rel(hgyDir, imagePathDest)
 					Fail(err)
-					images = append(images, relPath)
-					git.Fail(git.Add(imagePathDest))
+
+					if !recipe.ImageExists(relPath) {
+						images = append(images, relPath)
+						git.Fail(git.Add(imagePathDest))
+					}
 				}
 			}
-		}
-		for _, image := range recipe.Data.Images {
-			imagePathSrc := filepath.Join(
-				pathSrc,
-				image,
-			)
-			imagePathDest := filepath.Join(
-				imagePath,
-				filepath.Base(image),
-			)
-			Fail(CopyFile(
-				imagePathSrc,
-				imagePathDest,
-			))
-			relPath, err := filepath.Rel(hgyDir, imagePathDest)
-			Fail(err)
-			images = append(images, relPath)
-			git.Fail(git.Add(imagePathDest))
 		}
 
 		recipe.Data.Images = images
@@ -222,7 +244,11 @@ func main() {
 		git.Fail(git.Add(index.Filename()))
 		git.Fail(git.Add(pathName))
 		if git.HasChanges(true) {
-			git.Fail(git.Commit("New recipe added"))
+			if !recipeExists {
+				git.Fail(git.Commit("New recipe added"))
+			} else {
+				git.Fail(git.Commit("Image added to recipe"))
+			}
 		} else {
 			fmt.Println("Info: No new things here. Nothing to do.")
 		}
@@ -231,12 +257,24 @@ func main() {
 		pathName := filepath.Join(hgyDir, name)
 
 		if index.RecipeExists(name) {
-			Fail(Edit(pathName))
-
 			recipe := Recipe{}
 			Fail(recipe.Parse(pathName))
 
+			images := make(map[string]bool)
+			for _, image := range recipe.Data.Images {
+				images[image] = true
+			}
+
+			Fail(Edit(pathName))
+			Fail(recipe.Parse(pathName))
+
 			git := GitNew(hgyDir)
+			for _, image := range recipe.Data.Images {
+				delete(images, image)
+			}
+			for image := range images {
+				git.Fail(git.Remove(image))
+			}
 			git.Fail(git.Add(pathName))
 
 			if git.HasChanges(true) {
@@ -245,11 +283,15 @@ func main() {
 				fmt.Println("Info: No changes. Nothing to do.")
 			}
 		} else {
-			fmt.Printf("Info: No Recipe with the name '%s' exists\n", name)
+			fmt.Printf("Info: No Recipe found with the name '%s'\n", name)
 		}
 	case args["mv"] == true:
 		name := args["<name>"].(string)
 		newName := args["<new-name>"].(string)
+
+		if !args["--force"].(bool) {
+			Fail(GuardExists(filepath.Join(hgyDir, newName)))
+		}
 
 		Fail(os.Rename(
 			filepath.Join(hgyDir, name),
@@ -294,7 +336,7 @@ func main() {
 			git.Fail(git.Add(index.Filename()))
 			git.Fail(git.Commit("Recipe removed"))
 		} else {
-			fmt.Printf("Info: Recipe doest not exists with name '%s'\n", name)
+			fmt.Printf("Info: No Recipe found with the name '%s'\n", name)
 		}
 	case args["list"] == true:
 		var recipePaths []string
@@ -310,7 +352,13 @@ func main() {
 		recipe := Recipe{}
 		for _, recipePath := range recipePaths {
 			Fail(recipe.Parse(recipePath))
-			fmt.Printf("%-40s%s\n", filepath.Base(recipePath), recipe.Data.Name)
+			fmt.Printf("%s (%s)\n", filepath.Base(recipePath), recipe.Data.Name)
+
+			if args["--images"].(bool) {
+				for _, image := range recipe.Data.Images {
+					fmt.Printf("    %s\n", image)
+				}
+			}
 		}
 	case args["grocery"] == true:
 		names := args["<names>"].([]string)

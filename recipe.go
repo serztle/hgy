@@ -53,6 +53,16 @@ func (r *Recipe) Parse(path string) error {
 	return nil
 }
 
+func (r *Recipe) ImageExists(name string) bool {
+	for _, image := range r.Data.Images {
+		if image == name {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *Recipe) Save(path string) error {
 	content, err := r.String()
 	if err != nil {

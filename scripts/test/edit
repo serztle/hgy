@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 . ./scripts/test/setup
+. ./scripts/test/setup_hgy
 
-hgy init
-hgy edit gulasch
-hgy add --quiet gulasch
-hgy edit gulasch
+hgy edit foobar
+hgy add --quiet foobar
+hgy edit foobar
+hgy edit gulasch.yml
