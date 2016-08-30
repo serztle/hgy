@@ -31,18 +31,36 @@ USAGE:
     hgy rm <name>
     hgy list [--images]
     hgy grocery [(--persons <persons>)] <names>...
+    hgy grocery [(--persons <persons>)] --plan <plans>...
     hgy serve [(--static <dir>)]
-    hgy suggest [<from>] [<to>]
+    hgy plan [<from>] [<to>]
     hgy -h | --help
-	hgy --version
+    hgy --version
+
 OPTIONS:
-    -h --help            Show this screen
-    -i --image <image>   Path to a image file
-    -f --force           Disables safeguards
-    -q --quiet           Do not ask the user 
-    --persons <persons>  For how many persons to you want to cook [default: 2]
-    --static <dir>       Render static html pages in given directory
-	--images             Lists also all images
+    -h --help            Show this screen.
+    -i --image <image>   Path to a image file.
+    -f --force           Disables safeguards.
+    -q --quiet           Do not ask the user.
+    --persons <persons>  For how many persons to you want to cook. [default: 2]
+    --static <dir>       Render static html pages in given directory.
+    --images             List also all images.
+
+MANAGING COMMANDS:
+    init                 Create a new git repo with recipes in it.
+
+SINGLE RECIPES:
+    add                  Add a new recipe and launch editor.
+    edit                 Edit an existing recipe.
+    mv                   Rename an existing recipe.
+    rm                   Remove an existing recipe.
+
+LISTING AND VIEWING:
+    list                 List all known recipes.
+    grocery              Create a sorted & merged item list from the names
+                         for the next supermarket visit.
+    serve                Show a nice gallery of recipes on localhost:8080.
+    plan                 Create a food plan.
 `
 
 func Fail(err error) {
@@ -361,7 +379,24 @@ func main() {
 			}
 		}
 	case args["grocery"] == true:
-		names := args["<names>"].([]string)
+		var names []string
+
+		if args["--plan"] == true {
+			dateToRecipe := make(map[string]string)
+			plans := args["<plans>"].([]string)
+			for _, plan := range plans {
+				content, err := ioutil.ReadFile(plan)
+				Fail(err)
+				err = yaml.Unmarshal(content, &dateToRecipe)
+				Fail(err)
+				for date := range dateToRecipe {
+					names = append(names, dateToRecipe[date])
+				}
+			}
+		} else {
+			names = args["<names>"].([]string)
+		}
+
 		persons, err := strconv.Atoi(args["--persons"].(string))
 		Fail(err)
 
@@ -454,7 +489,7 @@ func main() {
 			http.Handle("/.images/", httpHandler{context, imageHandler})
 			http.ListenAndServe(":8080", nil)
 		}
-	case args["suggest"] == true:
+	case args["plan"] == true:
 		if len(index.Recipes) == 0 {
 			Fail(fmt.Errorf("No recipes found!"))
 		}

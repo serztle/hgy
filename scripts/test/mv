@@ -2,4 +2,4 @@
 . ./scripts/test/setup
 . ./scripts/test/setup_hgy
 
-hgy mv gulasch.yml gulasch
+hgy mv gulasch gulasch2

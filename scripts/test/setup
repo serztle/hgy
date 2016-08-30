@@ -4,7 +4,8 @@ set -e
 make
 export PATH=$PATH:`pwd`
 export HGY_DIR=/tmp/hgy
-cp examples /tmp -R
+export EX_DIR=$HGY_DIR/examples
 rm -rf $HGY_DIR
 mkdir -p $HGY_DIR
+cp examples $HGY_DIR -R
 set +e

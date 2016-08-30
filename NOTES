@@ -1,31 +1,5 @@
-USAGE: hgy [SUBCOMMAND] [ARGUMENTS]
-
-Maintain and manage a set of recipes in git.
-
-MANAGING COMMANDS:
-
-  hgy init <dir>            Create a new git repo with recipes in it.
-
-SINGLE RECIPEES:
-
-  hgy add <name>                 Add a new recipe and launch editor.
-  hgy set <name> default image   Set a new default image
-  hgy edit <name>                Edit an existing recipe.
-  hgy rm                         Remove an existing recipe.
-
-LISTING AND VIEWING:
-
-  hgy list                  List all known recipes.
-  hgy grocery <name> [...]  Create a sorted & merged item list from the names
-                            for the next supermarket visit ready to print.
-  hgy serve                 Show a nice gallery of recipes on localhost:6666
-  hgy serve --static <dir>  Saves static html pages in the given directory
-  hgy suggest [from[..to]]  Create a consistent hgy plan, starting at `from` until `to`.
-
-BUGS / FEATURES:
-    
-  grocery - Intelligente metrische Umrechnung
-  cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
-         Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
-         (ncurses?)
-  export - Nimmt Essensplan von suggest entgegen / Exporttyp (Taskwarrior, PDF, HTML)
+grocery - Intelligente metrische Umrechnung
+cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
+     Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
+     (ncurses?)
+export - Nimmt Essensplan von suggest entgegen / Exporttyp (Taskwarrior, PDF, HTML)

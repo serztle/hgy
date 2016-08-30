@@ -4,8 +4,10 @@
 
 hgy grocery --persons 1 filet_wellington.yml
 hgy grocery --persons 2 filet_wellington.yml
-hgy grocery --persons 3 filet_wellington.yml
-hgy grocery --persons 4 filet_wellington.yml
-hgy grocery --persons 5 filet_wellington.yml
 hgy grocery --persons 10 filet_wellington.yml
-hgy grocery --persons 20 filet_wellington.yml
+
+hgy plan > $HGY_DIR/plan1
+hgy plan > $HGY_DIR/plan2
+
+hgy grocery --persons 4 --plan $HGY_DIR/plan1
+hgy grocery --persons 2 --plan $HGY_DIR/plan1 $HGY_DIR/plan2

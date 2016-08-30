@@ -2,6 +2,6 @@
 . ./scripts/test/setup
 . ./scripts/test/setup_hgy
 
-hgy suggest
-hgy suggest 20160801
-hgy suggest 20160801 20160815
+hgy plan
+hgy plan 20160801
+hgy plan 20160801 20160815
