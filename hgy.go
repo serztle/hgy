@@ -80,9 +80,9 @@ func CheckDir(dir string) error {
 	indexExists := index.Exists()
 
 	if !gitExists && indexExists {
-		return fmt.Errorf("%v: There is a index, but no git archiv. Akward!", defaultError)
+		return fmt.Errorf("%v: There is a index, but no git archiv. Awkward!", defaultError)
 	} else if gitExists && !indexExists {
-		return fmt.Errorf("%v: There is a git archiv, but no index. Akward!", defaultError)
+		return fmt.Errorf("%v: There is a git archiv, but no index. Awkward!", defaultError)
 	} else if !gitExists && !indexExists {
 		return defaultError
 	} else {
@@ -132,7 +132,7 @@ func main() {
 
 	if args["init"] == true {
 		if stat, err := os.Stat(hgyDir); os.IsNotExist(err) {
-			Fail(os.Mkdir(hgyDir, 0700))
+			Fail(os.MkdirAll(hgyDir, 0700))
 		} else if !stat.IsDir() {
 			Fail(fmt.Errorf("%s already exists and is not a directory!", hgyDir))
 		}

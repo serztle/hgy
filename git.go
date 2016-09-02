@@ -40,18 +40,20 @@ func (g *Git) New(dir string) error {
 }
 
 func (g *Git) Fail(err error) {
-	if err != nil {
-		if errReset := g.Exec("reset"); errReset != nil {
-			fmt.Printf(
-				"Error: Git reset failed (%v). Something went horribly wrong!\nCause: %v. Abort.\n",
-				errReset,
-				err,
-			)
-			os.Exit(1)
-		} else {
-			fmt.Printf("Error: %v. Abort.\n", err)
-			os.Exit(1)
-		}
+	if err == nil {
+		return
+	}
+
+	if errReset := g.Exec("reset"); errReset != nil {
+		fmt.Printf(
+			"Error: Git reset failed (%v). Something went horribly wrong!\nCause: %v. Abort.\n",
+			errReset,
+			err,
+		)
+		os.Exit(1)
+	} else {
+		fmt.Printf("Error: %v. Abort.\n", err)
+		os.Exit(1)
 	}
 }
 

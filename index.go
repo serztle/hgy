@@ -63,7 +63,7 @@ func (i *Index) RecipeRemove(name string) {
 
 func (i *Index) Save() error {
 	if content, err := yaml.Marshal(i.Recipes); err != nil {
-		return fmt.Errorf("Makeing yaml for index %s (%v)!", i.Path, err)
+		return fmt.Errorf("Making yaml for index %s (%v)!", i.Path, err)
 	} else if err := ioutil.WriteFile(i.Path, content, 0666); err != nil {
 		return fmt.Errorf("Writing index to %s (%v)!", i.Path, err)
 	} else {

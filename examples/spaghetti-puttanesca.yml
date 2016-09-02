@@ -1,0 +1,34 @@
+name: Spaghetti Puttanesca
+persons: 4
+images:
+  - images/spaghetti-puttanesca.yml
+duration:
+  preparation: 10m
+  cooking: 30m
+  total:   40m
+ingredients:
+  - 500g Spaghetti
+  - 1000gehackte Tomaten (aus der Dose)
+  - Dose eingelegte Sardellen (nicht an der Menge sparen)
+  - 5-6 Zehen Knoblauch
+  - Handvoll Kapern
+  - schwarze entsteinte Oliven
+  - 100g Pecorino oder Parmesan
+  - Strauch Basilikum
+spices:
+  - Pfeffer
+  - Salz
+  - Oregano
+  - Muskat
+  - Chillipaste
+complementaries:
+  - Olivenöl
+  - Weißwein
+recipe:
+  - Sardellen und Knoblauch sehr klein hacken. Oliven halbieren.
+  - Knoblauch in Öl anbraten.
+  - Wasser zum Kochen bringen und Spaghetti darin 10-12 Minuten kochen.
+  - Knoblauch mit Weißwein ablöschen und Tomaten zugeben und kurz kochen lassen.
+  - Kapern, Chillipaste, Oliven und etwas vom Käse der Soße zugeben und ca. 10 Minuten köcheln lassen.
+  - Mit Pfeffer, Salz, Muskat, etwas Weißwein und viel Basilikum würzen.
+  - Zum Servieren frischen Käse reiben.
