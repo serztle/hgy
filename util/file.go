@@ -28,3 +28,10 @@ func Edit(filename string) error {
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }
+
+func GuardExists(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Guard: Destination file already exists (%s). Use --force to ignore this", path)
+	}
+	return nil
+}

@@ -39,7 +39,7 @@ func (g *Git) New(dir string) error {
 	return nil
 }
 
-func (g *Git) Fail(err error) {
+func (g *Git) Trap(err error) {
 	if err == nil {
 		return
 	}

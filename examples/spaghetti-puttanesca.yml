@@ -1,7 +1,7 @@
 name: Spaghetti Puttanesca
 persons: 4
 images:
-  - images/spaghetti-puttanesca.yml
+    - images/spaghetti_puttanesca_1.jpg
 duration:
   preparation: 10m
   cooking: 30m

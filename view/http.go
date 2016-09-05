@@ -262,7 +262,7 @@ func renderStatic(hgyDir string, store *index.Index, staticDir string) error {
 	Fail(err)
 	Fail(os.MkdirAll(dir, 0700))
 	Fail(ioutil.WriteFile(
-		filepath.Join(dir, "store.html"),
+		filepath.Join(dir, "index.html"),
 		indexPage.Bytes(),
 		0600,
 	))
