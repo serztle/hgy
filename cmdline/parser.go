@@ -136,7 +136,7 @@ func Run() {
 			ArgsUsage:   "<dir>",
 			Description: "Create a new, empty git repo that can be filled with recipes at <dir>.",
 			Action: func(ctx *cli.Context) error {
-				return handleInit(ctx.GlobalString("directory"))
+				return handleInit(ctx.Args().First())
 			},
 		}, {
 			Name:        "add",

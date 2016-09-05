@@ -19,7 +19,7 @@ const baseTemplate = `
 <head>
 <title>{{.Title}}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Vollkorn" />
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Vollkorn" />
 <style>
 div.img {
     margin: 5px;
@@ -352,6 +352,9 @@ func renderStatic(store *index.Index, staticDir string) error {
 		}
 
 		detailPath := filepath.Join(dir, "detail", recipeName+".html")
+		if err := os.MkdirAll(filepath.Dir(detailPath), 0700); err != nil {
+			return err
+		}
 		if err := ioutil.WriteFile(detailPath, detailPage.Bytes(), 0600); err != nil {
 			return err
 		}

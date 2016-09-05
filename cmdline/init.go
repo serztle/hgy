@@ -9,6 +9,9 @@ import (
 )
 
 func handleInit(repoDir string) error {
+	if repoDir == "" {
+		repoDir = "."
+	}
 	if stat, err := os.Stat(repoDir); os.IsNotExist(err) {
 		return os.MkdirAll(repoDir, 0700)
 	} else if !stat.IsDir() {
