@@ -13,6 +13,25 @@ import (
 	"github.com/serztle/nom/util"
 )
 
+func createTempCookFile(ingredients []string, persons int) (string, error) {
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "nom")
+	if err != nil {
+		return "", err
+	}
+
+	defer tmpfile.Close()
+
+	if _, err := tmpfile.Write([]byte(fmt.Sprintf("Persons: %d\n", persons))); err != nil {
+		return "", err
+	}
+
+	if _, err := tmpfile.Write([]byte(strings.Join(ingredients, "\n"))); err != nil {
+		return "", err
+	}
+
+	return tmpfile.Name(), nil
+}
+
 func handleCook(store *index.Index, name string, persons int) error {
 	recipe := index.Recipe{}
 	if err := recipe.Parse(filepath.Join(store.RepoDir(), name)); err != nil {
@@ -23,34 +42,22 @@ func handleCook(store *index.Index, name string, persons int) error {
 		persons = int(recipe.Data.Persons)
 	}
 
-	ingredients := make(map[string]index.Range)
-	recipe.CalcIngredients(persons, ingredients)
-	tmp := index.IngredientsMapToList(ingredients)
+	ingredientsMap := make(map[string]index.Range)
+	recipe.CalcIngredients(persons, ingredientsMap)
+	ingredients := index.IngredientsMapToList(ingredientsMap)
 
-	tmpfile, err := ioutil.TempFile(os.TempDir(), "nom")
+	tmpName, err := createTempCookFile(ingredients, persons)
 	if err != nil {
 		return err
 	}
 
-	defer os.Remove(tmpfile.Name())
+	defer os.Remove(tmpName)
 
-	if _, err := tmpfile.Write([]byte(fmt.Sprintf("Persons: %d\n", persons))); err != nil {
-		return err
-	}
+	util.Edit(tmpName)
 
-	if _, err := tmpfile.Write([]byte(strings.Join(tmp, "\n"))); err != nil {
-		return err
-	}
-
-	if err := tmpfile.Close(); err != nil {
-		return err
-	}
-
-	util.Edit(tmpfile.Name())
-
-	idx := 0
 	start := time.Now()
 	elapsed := time.Duration(0)
+
 	expected, err := time.ParseDuration(recipe.Data.Duration.Preparation)
 	if err != nil {
 		return err
@@ -58,21 +65,16 @@ func handleCook(store *index.Index, name string, persons int) error {
 
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("\033[2J\033[1;1H")
-	for {
-		elapsed = time.Now().Sub(start)
+	for idx := 0; idx < len(recipe.Data.Recipe); idx++ {
+		elapsed = time.Since(start)
 
 		fmt.Printf(
 			"[%02d:%02d/%02d:%02d]",
-			int(elapsed.Seconds())/60,
+			int(elapsed.Minutes()),
 			int(elapsed.Seconds())%60,
-			int(expected.Seconds())/60,
+			int(expected.Minutes()),
 			int(expected.Seconds())%60,
 		)
-
-		if idx == len(recipe.Data.Recipe) {
-			fmt.Println("")
-			break
-		}
 
 		fmt.Printf(
 			" %s",
@@ -80,8 +82,8 @@ func handleCook(store *index.Index, name string, persons int) error {
 		)
 
 		reader.ReadString('\n')
-		idx++
 	}
 
+	fmt.Println("")
 	return nil
 }

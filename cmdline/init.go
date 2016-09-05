@@ -12,14 +12,14 @@ func handleInit(repoDir string) error {
 	if stat, err := os.Stat(repoDir); os.IsNotExist(err) {
 		return os.MkdirAll(repoDir, 0700)
 	} else if !stat.IsDir() {
-		return fmt.Errorf("%s already exists and is not a directory!", repoDir)
+		return fmt.Errorf("%s already exists and is not a directory", repoDir)
 	}
 
 	store := index.NewIndex(repoDir)
 	git := util.NewGit(repoDir)
 
 	if git.Exists() && store.Exists() {
-		return fmt.Errorf("There is already a nom archiv in '%s'. Nothing to do.\n", repoDir)
+		return fmt.Errorf("There is already a nom archiv in '%s'. Nothing to do", repoDir)
 	} else if git.Exists() {
 		return fmt.Errorf("There is already a git archiv in '%s'", repoDir)
 	} else if store.Exists() {
@@ -45,5 +45,6 @@ func handleInit(repoDir string) error {
 
 		return nil
 	})
+
 	return nil
 }

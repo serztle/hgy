@@ -9,8 +9,8 @@ import (
 )
 
 func handleList(store *index.Index, showImages bool) error {
-	var recipePaths []string
-	for recipeName, _ := range store.Recipes {
+	recipePaths := []string{}
+	for recipeName := range store.Recipes {
 		recipePaths = append(
 			recipePaths,
 			filepath.Join(store.RepoDir(), recipeName),

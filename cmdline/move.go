@@ -18,21 +18,21 @@ func handleMove(store *index.Index, name string, newName string, force bool) err
 
 	namePath := filepath.Join(store.RepoDir(), name)
 	newNamePath := filepath.Join(store.RepoDir(), newName)
-
 	if err := os.Rename(namePath, newNamePath); err != nil {
 		return err
 	}
 
 	imagePath := filepath.Join(store.RepoDir(), ".images", name)
 	newImagePath := filepath.Join(store.RepoDir(), ".images", newName)
-
 	if err := os.Rename(imagePath, newImagePath); err != nil {
 		return err
 	}
 
 	store.RecipeRemove(name)
 	store.RecipeAdd(newName)
-	store.Save()
+	if err := store.Save(); err != nil {
+		return err
+	}
 
 	git := util.NewGit(store.RepoDir())
 	git.WithTransaction(func() error {

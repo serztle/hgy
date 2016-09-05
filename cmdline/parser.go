@@ -69,9 +69,9 @@ func CheckDir(dir string) error {
 		return fmt.Errorf("%v: There is a git archiv, but no store. Awkward!", defaultError)
 	} else if !gitExists && !indexExists {
 		return defaultError
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func withIndex(handler func(ctx *cli.Context, store *index.Index) error) func(*cli.Context) error {
@@ -94,7 +94,7 @@ func formatGroup(category string) string {
 	return strings.ToUpper(category) + " COMMANDS"
 }
 
-func Main() {
+func Run() {
 	app := cli.NewApp()
 	app.Name = "nom"
 	app.Usage = "Mantain and manage a set of recipes in git."

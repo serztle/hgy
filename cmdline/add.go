@@ -9,6 +9,42 @@ import (
 	"github.com/serztle/nom/util"
 )
 
+func createNewRecipe(recipe index.Recipe, path, pathName, repoDir string, force, quiet bool) (string, error) {
+	if err := os.MkdirAll(filepath.Dir(pathName), 0700); err != nil {
+		return "", err
+	}
+
+	if !force {
+		if err := util.GuardExists(pathName); err != nil {
+			return "", err
+		}
+	}
+
+	pathSrc := ""
+
+	if path != "" {
+		pathSrc = filepath.Dir(path)
+		if err := recipe.Parse(path); err != nil {
+			return "", err
+		}
+
+		if err := recipe.Save(pathName); err != nil {
+			return "", err
+		}
+	} else {
+		pathSrc = repoDir
+		recipe.Save(pathName)
+
+		if !quiet {
+			if err := util.Edit(pathName); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return pathSrc, nil
+}
+
 func handleAdd(store *index.Index, name, path string, force, quiet bool, argImages []string) error {
 	repoDir := store.RepoDir()
 	recipeExists := store.RecipeExists(name)
@@ -18,36 +54,12 @@ func handleAdd(store *index.Index, name, path string, force, quiet bool, argImag
 	}
 
 	pathSrc := ""
+
 	recipe := index.Recipe{}
 	if !recipeExists {
-		if err := os.MkdirAll(filepath.Dir(pathName), 0700); err != nil {
+		pathSrc, err = createNewRecipe(recipe, path, pathName, repoDir, force, quiet)
+		if err != nil {
 			return err
-		}
-
-		if !force {
-			if err := util.GuardExists(pathName); err != nil {
-				return err
-			}
-		}
-
-		if path != "" {
-			pathSrc = filepath.Dir(path)
-			if err := recipe.Parse(path); err != nil {
-				return err
-			}
-
-			if err := recipe.Save(pathName); err != nil {
-				return err
-			}
-		} else {
-			pathSrc = repoDir
-			recipe.Save(pathName)
-
-			if !quiet {
-				if err := util.Edit(pathName); err != nil {
-					return err
-				}
-			}
 		}
 	} else if path != "" {
 		return fmt.Errorf("Recipe '%s' already exists", name)
@@ -93,9 +105,7 @@ func handleAdd(store *index.Index, name, path string, force, quiet bool, argImag
 			images = append(images, relPath)
 		}
 	} else {
-		for _, image := range recipe.Data.Images {
-			images = append(images, image)
-		}
+		images = append(images, recipe.Data.Images...)
 	}
 
 	for _, argImage := range argImages {

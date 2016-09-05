@@ -11,40 +11,52 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	dateFormat = "2006-01-02"
+)
+
+func convertDates(fromDate, toDate string, days int) (*time.Time, int, error) {
+	var err error
+
+	from, to := time.Now(), time.Now()
+
+	if fromDate != "" {
+		from, err = time.Parse(dateFormat, fromDate)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	if toDate != "" {
+		to, err = time.Parse(dateFormat, toDate)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		days = int(math.Floor(to.Sub(from).Hours() / 24.0))
+	}
+
+	return &from, days, nil
+}
+
 func handlePlan(store *index.Index, fromDate string, toDate string) error {
 	if len(store.Recipes) == 0 {
-		return fmt.Errorf("No recipes found!")
+		return fmt.Errorf("No recipes found")
+	}
+
+	from, days, err := convertDates(fromDate, toDate, len(store.Recipes))
+	if err != nil {
+		return err
 	}
 
 	rand.Seed(time.Now().UnixNano())
-
-	format := "2006-01-02"
-
-	from := time.Now()
-	to := time.Now()
-	days := len(store.Recipes)
-
-	var err error
-
-	if fromDate != "" {
-		from, err = time.Parse(format, fromDate)
-		if err != nil {
-			return err
-		}
-	}
-	if toDate != "" {
-		to, err = time.Parse(format, toDate)
-		if err != nil {
-			return err
-		}
-		days = int(math.Floor(to.Sub(from).Hours() / 24.0))
-	}
 
 	var indexes []int
 	var recipeNames []string
 	for recipeName := range store.Recipes {
 		recipeNames = append(recipeNames, recipeName)
 	}
+
 	idx := len(store.Recipes)
 	dateToRecipe := make(map[string]string)
 	for day := 0; day <= days; day++ {
@@ -52,8 +64,9 @@ func handlePlan(store *index.Index, fromDate string, toDate string) error {
 			indexes = rand.Perm(len(recipeNames))
 			idx = 0
 		}
+
 		stamp := from.Add(time.Hour * 24 * time.Duration(day))
-		dateToRecipe[stamp.Format(format)] = recipeNames[indexes[idx]]
+		dateToRecipe[stamp.Format(dateFormat)] = recipeNames[indexes[idx]]
 		idx++
 	}
 
@@ -62,7 +75,10 @@ func handlePlan(store *index.Index, fromDate string, toDate string) error {
 	if err != nil {
 		return err
 	}
-	os.Stdout.Write(content)
+
+	if _, err := os.Stdout.Write(content); err != nil {
+		return err
+	}
 
 	return nil
 }

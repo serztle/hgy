@@ -16,10 +16,11 @@ func handleGrocery(store *index.Index, names, plans []string, persons int) error
 		if err != nil {
 			return err
 		}
-		err = yaml.Unmarshal(content, &dateToRecipe)
-		if err != nil {
+
+		if err := yaml.Unmarshal(content, &dateToRecipe); err != nil {
 			return err
 		}
+
 		for date := range dateToRecipe {
 			names = append(names, dateToRecipe[date])
 		}
