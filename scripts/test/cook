@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. ./scripts/test/setup
+. ./scripts/test/setup_hgy
+
+hgy cook gefuellte-aubergine 
+hgy cook --persons 3 gefuellte-aubergine 
+hgy cook --persons 10 gefuellte-aubergine 

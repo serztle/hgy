@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/docopt/docopt-go"
 	"gopkg.in/yaml.v2"
@@ -13,8 +14,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
-	"unicode"
 )
 
 const usage = `
@@ -32,6 +33,7 @@ USAGE:
     hgy list [--images]
     hgy grocery [(--persons <persons>)] <names>...
     hgy grocery [(--persons <persons>)] --plan <plans>...
+    hgy cook [(--persons <persons>)] <name>
     hgy serve [(--static <dir>)]
     hgy plan [<from>] [<to>]
     hgy -h | --help
@@ -61,6 +63,7 @@ LISTING AND VIEWING:
                          for the next supermarket visit.
     serve                Show a nice gallery of recipes on localhost:8080.
     plan                 Create a food plan.
+    cook                 Step-by-step instructions
 `
 
 func Fail(err error) {
@@ -402,47 +405,16 @@ func main() {
 
 		fmt.Printf("Persons: %d\n", persons)
 
-		sum := make(map[string]float64)
+		ingredients := make(map[string]Range)
 		for _, name := range names {
-			pathName := filepath.Join(hgyDir, name)
-
 			recipe := Recipe{}
-			Fail(recipe.Parse(pathName))
+			Fail(recipe.Parse(filepath.Join(hgyDir, name)))
 
-			factor := float64(persons) / float64(recipe.Data.Persons)
-
-			for _, ingredient := range recipe.Data.Ingredients {
-				var num float64
-				substr := ""
-				for pos, char := range ingredient {
-					if !unicode.IsNumber(char) {
-						tmp, _ := strconv.Atoi(ingredient[0:pos])
-						num = float64(tmp) * factor
-						substr = ingredient[pos:]
-						break
-					}
-				}
-				if _, ok := sum[substr]; ok {
-					sum[substr] += num
-				} else {
-					sum[substr] = num
-				}
-			}
+			recipe.CalcIngredients(persons, ingredients)
 		}
 
-		var keys []string
-		for key := range sum {
-			keys = append(keys, key)
-		}
-
-		sort.Strings(keys)
-
-		for _, key := range keys {
-			if sum[key] == 0 {
-				fmt.Printf("%s\n", key)
-			} else {
-				fmt.Printf("%d%s\n", int(math.Floor(sum[key]+0.5)), key)
-			}
+		for _, ingredient := range IngredientsMapToList(ingredients) {
+			fmt.Println(ingredient)
 		}
 	case args["serve"] == true:
 		context := &httpContext{hgyDir, index}
@@ -530,5 +502,67 @@ func main() {
 		content, err := yaml.Marshal(dateToRecipe)
 		Fail(err)
 		os.Stdout.Write(content)
+	case args["cook"] == true:
+		name := args["<name>"].(string)
+		if !index.RecipeExists(name) {
+			Fail(fmt.Errorf("No Recipe with name '%s' found!", name))
+			return
+		}
+		recipe := Recipe{}
+		Fail(recipe.Parse(filepath.Join(hgyDir, name)))
+		ingredients := make(map[string]Range)
+
+		persons := int(recipe.Data.Persons)
+		if args["--persons"] != nil {
+			persons, err = strconv.Atoi(args["--persons"].(string))
+			Fail(err)
+		}
+
+		recipe.CalcIngredients(persons, ingredients)
+		tmp := IngredientsMapToList(ingredients)
+
+		tmpfile, err := ioutil.TempFile("/tmp", "hgy")
+		Fail(err)
+		defer os.Remove(tmpfile.Name())
+		if _, err := tmpfile.Write([]byte(fmt.Sprintf("Persons: %d\n", persons))); err != nil {
+			Fail(err)
+		}
+		if _, err := tmpfile.Write([]byte(strings.Join(tmp, "\n"))); err != nil {
+			Fail(err)
+		}
+		Fail(tmpfile.Close())
+		Edit(tmpfile.Name())
+
+		idx := 0
+		start := time.Now()
+		elapsed := time.Duration(0)
+		expected, err := time.ParseDuration(recipe.Data.Duration.Preparation)
+		Fail(err)
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("\033[2J]\033[1;1H]")
+		for {
+			elapsed = time.Now().Sub(start)
+
+			fmt.Printf(
+				"[%02d:%02d/%02d:%02d]",
+				int(elapsed.Seconds())/60,
+				int(elapsed.Seconds())%60,
+				int(expected.Seconds())/60,
+				int(expected.Seconds())%60,
+			)
+
+			if idx == len(recipe.Data.Recipe) {
+				fmt.Println("")
+				break
+			}
+
+			fmt.Printf(
+				" %s",
+				recipe.Data.Recipe[idx],
+			)
+
+			reader.ReadString('\n')
+			idx++
+		}
 	}
 }

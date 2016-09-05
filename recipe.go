@@ -4,8 +4,17 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"math"
 	"path/filepath"
+	"sort"
+	"strconv"
+	"unicode"
 )
+
+type Range struct {
+	From float64
+	To   float64
+}
 
 type Recipe struct {
 	Name string
@@ -51,6 +60,101 @@ func (r *Recipe) Parse(path string) error {
 		}
 	}
 	return nil
+}
+
+func (r *Recipe) CalcIngredients(persons int, ingredients map[string]Range) {
+	factor := float64(persons) / float64(r.Data.Persons)
+
+	for _, ingredient := range r.Data.Ingredients {
+		var num Range
+		pnum := &num.From
+
+		substr := ""
+		fromPos := 0
+		for pos, char := range ingredient {
+			if !unicode.IsNumber(char) {
+				tmp, _ := strconv.Atoi(ingredient[fromPos:pos])
+				*pnum = float64(tmp) * factor
+				substr = ingredient[pos:]
+				if char == '-' {
+					pnum = &num.To
+					fromPos = pos + 1
+					continue
+				} else {
+					break
+				}
+			}
+		}
+		if _, ok := ingredients[substr]; ok {
+			tmp := ingredients[substr]
+			tmp.From += num.From
+			tmp.To += num.To
+			ingredients[substr] = tmp
+		} else {
+			ingredients[substr] = num
+		}
+	}
+
+	for key, value := range ingredients {
+		if value.From < 1.0 {
+			unit := ""
+			rest := ""
+			for pos, char := range key {
+				if char == ' ' {
+					unit = key[:pos]
+					rest = key[pos:]
+					break
+				}
+			}
+			switch unit {
+			case "kg":
+				tmp := ingredients["g"+rest]
+				tmp.From = value.From * 1000
+				ingredients["g"+rest] = tmp
+				delete(ingredients, key)
+				break
+			case "l":
+				tmp := ingredients["g"+rest]
+				tmp.From = value.From * 1000
+				ingredients["ml"+rest] = tmp
+				//ingredients["ml"+rest].To = value.From * 1000
+				delete(ingredients, key)
+				break
+			}
+		}
+	}
+
+	//var keys []string
+	//for key := range ingredients {
+	//	keys = append(keys, key)
+	//}
+
+	//sort.Strings(keys)
+}
+
+func IngredientsMapToList(ingredients map[string]Range) []string {
+	var keys []string
+	var result []string
+	for key := range ingredients {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		from := int(int(math.Floor(ingredients[key].From + 0.5)))
+		to := int(int(math.Floor(ingredients[key].To + 0.5)))
+
+		if from == 0 {
+			result = append(result, fmt.Sprintf("%s", key))
+		} else if to == 0 || from == to {
+			result = append(result, fmt.Sprintf("%d%s", from, key))
+		} else {
+			result = append(result, fmt.Sprintf("%d-%d%s", from, to, key))
+		}
+	}
+
+	return result
 }
 
 func (r *Recipe) ImageExists(name string) bool {
