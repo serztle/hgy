@@ -1,4 +1,4 @@
-package main
+package index
 
 import (
 	"fmt"
@@ -13,8 +13,8 @@ type Index struct {
 	Recipes map[string]bool
 }
 
-func IndexNew(dir string) Index {
-	return Index{
+func IndexNew(dir string) *Index {
+	return &Index{
 		Path:    filepath.Join(dir, ".hgy"),
 		Recipes: make(map[string]bool),
 	}

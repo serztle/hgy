@@ -1,4 +1,4 @@
-package main
+package view
 
 import (
 	"bytes"
@@ -6,7 +6,11 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
+
+	"github.com/serztle/hgy/index"
+	"github.com/serztle/hgy/util"
 )
 
 const baseTemplate = `
@@ -117,7 +121,7 @@ const detailTemplate = `
 
 type httpContext struct {
 	hgyDir string
-	index  Index
+	index  *index.Index
 }
 
 type httpHandler struct {
@@ -153,9 +157,9 @@ func renderIndex(context *httpContext, root string) (bytes.Buffer, error) {
 		return html, err
 	}
 
-	var recipes []Recipe
+	var recipes []index.Recipe
 	for recipeName := range context.index.Recipes {
-		recipe := Recipe{}
+		recipe := index.Recipe{}
 		recipe.Name = recipeName
 		recipePath := filepath.Join(context.hgyDir, recipeName)
 		if err := recipe.Parse(recipePath); err != nil {
@@ -167,8 +171,8 @@ func renderIndex(context *httpContext, root string) (bytes.Buffer, error) {
 	var data struct {
 		Title   string
 		Root    string
-		Recipe  Recipe
-		Recipes []Recipe
+		Recipe  index.Recipe
+		Recipes []index.Recipe
 	}
 
 	data.Title = "Overview"
@@ -198,7 +202,7 @@ func renderDetail(context *httpContext, root string, recipeName string) (bytes.B
 		return html, err
 	}
 
-	recipe := RecipeNew(context.hgyDir, recipeName)
+	recipe := index.RecipeNew(context.hgyDir, recipeName)
 	recipe.Name = recipeName
 	if err := recipe.Load(); err != nil {
 		return html, err
@@ -207,8 +211,8 @@ func renderDetail(context *httpContext, root string, recipeName string) (bytes.B
 	var data struct {
 		Title   string
 		Root    string
-		Recipe  Recipe
-		Recipes []Recipe
+		Recipe  index.Recipe
+		Recipes []index.Recipe
 	}
 
 	data.Title = recipe.Data.Name
@@ -242,4 +246,66 @@ func imageHandler(context *httpContext, w http.ResponseWriter, r *http.Request) 
 	} else {
 		return w.Write(data)
 	}
+}
+
+func Fail(err error) {
+	if err != nil {
+		fmt.Printf("Error: %v. Abort.\n", err)
+		os.Exit(1)
+	}
+}
+
+func renderStatic(hgyDir string, store *index.Index, staticDir string) error {
+	dir := filepath.Clean(staticDir)
+	context := &httpContext{hgyDir, store}
+	indexPage, err := renderIndex(context, dir)
+	Fail(err)
+	Fail(os.MkdirAll(dir, 0700))
+	Fail(ioutil.WriteFile(
+		filepath.Join(dir, "store.html"),
+		indexPage.Bytes(),
+		0600,
+	))
+
+	Fail(os.MkdirAll(filepath.Join(dir, "detail"), 0700))
+	for recipeName := range store.Recipes {
+		detailPage, err := renderDetail(context, dir, recipeName)
+		Fail(err)
+		Fail(ioutil.WriteFile(
+			filepath.Join(dir, "detail", recipeName+".html"),
+			detailPage.Bytes(),
+			0600,
+		))
+	}
+
+	imagePath := filepath.Join(hgyDir, ".images")
+	return filepath.Walk(imagePath, func(path string, info os.FileInfo, err error) error {
+		relPath, err := filepath.Rel(hgyDir, path)
+		if err != nil {
+			return err
+		}
+		destPath := filepath.Join(dir, relPath)
+		err = os.MkdirAll(filepath.Dir(destPath), 0700)
+		if err != nil {
+			return err
+		}
+		if info.Mode().IsRegular() {
+			return util.CopyFile(path, destPath)
+		} else {
+			return nil
+		}
+	})
+}
+
+func Serve(hgyDir string, store *index.Index, staticDir string) error {
+	if staticDir != "" {
+		return renderStatic(hgyDir, store, staticDir)
+	}
+
+	context := &httpContext{hgyDir, store}
+	fmt.Println("Visit http://localhost:8080")
+	http.Handle("/", httpHandler{context, indexHandler})
+	http.Handle("/detail/", httpHandler{context, detailHandler})
+	http.Handle("/.images/", httpHandler{context, imageHandler})
+	return http.ListenAndServe(":8080", nil)
 }

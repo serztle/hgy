@@ -1,21 +1,23 @@
-package main
+package cmdline
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/docopt/docopt-go"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math"
 	"math/rand"
-	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/docopt/docopt-go"
+	"github.com/serztle/hgy/index"
+	"github.com/serztle/hgy/util"
+	"github.com/serztle/hgy/view"
+	"gopkg.in/yaml.v2"
 )
 
 const usage = `
@@ -74,45 +76,23 @@ func Fail(err error) {
 }
 
 func CheckDir(dir string) error {
-	git := GitNew(dir)
-	index := IndexNew(dir)
+	git := util.GitNew(dir)
+	store := index.IndexNew(dir)
 
 	defaultError := fmt.Errorf("Seems not to be a hgy archiv in '%s'", dir)
 
 	gitExists := git.Exists()
-	indexExists := index.Exists()
+	indexExists := store.Exists()
 
 	if !gitExists && indexExists {
-		return fmt.Errorf("%v: There is a index, but no git archiv. Awkward!", defaultError)
+		return fmt.Errorf("%v: There is a store, but no git archiv. Awkward!", defaultError)
 	} else if gitExists && !indexExists {
-		return fmt.Errorf("%v: There is a git archiv, but no index. Awkward!", defaultError)
+		return fmt.Errorf("%v: There is a git archiv, but no store. Awkward!", defaultError)
 	} else if !gitExists && !indexExists {
 		return defaultError
 	} else {
 		return nil
 	}
-}
-
-func CopyFile(src string, dest string) error {
-	if data, err := ioutil.ReadFile(src); err != nil {
-		return fmt.Errorf("CopyFile: ReadFile: %v", err)
-	} else {
-		if err := ioutil.WriteFile(dest, data, 0600); err != nil {
-			return fmt.Errorf("CopyFile: WriteFile: %v", err)
-		}
-	}
-	return nil
-}
-
-func Edit(filename string) error {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "vim"
-	}
-	cmd := exec.Command(editor, filename)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
 }
 
 func GuardExists(path string) error {
@@ -122,7 +102,7 @@ func GuardExists(path string) error {
 	return nil
 }
 
-func main() {
+func Main() {
 	args, err := docopt.Parse(usage, nil, true, "hgy v0.01 Raah Raah Bläh!", false)
 	Fail(err)
 
@@ -140,38 +120,38 @@ func main() {
 			Fail(fmt.Errorf("%s already exists and is not a directory!", hgyDir))
 		}
 
-		git := GitNew(hgyDir)
-		index := IndexNew(hgyDir)
+		git := util.GitNew(hgyDir)
+		store := index.IndexNew(hgyDir)
 
-		if git.Exists() && index.Exists() {
+		if git.Exists() && store.Exists() {
 			fmt.Printf("There is already a hgy archiv in '%s'. Nothing to do.\n", hgyDir)
 			return
 		} else if git.Exists() {
 			Fail(fmt.Errorf("There is already a git archiv in '%s'", hgyDir))
-		} else if index.Exists() {
-			Fail(fmt.Errorf("There is already a index file in '%s'", hgyDir))
+		} else if store.Exists() {
+			Fail(fmt.Errorf("There is already a store file in '%s'", hgyDir))
 		}
 
 		git.Fail(git.Init())
-		git.Fail(index.Save())
-		git.Fail(git.Add(index.Filename()))
+		git.Fail(store.Save())
+		git.Fail(git.Add(store.Filename()))
 		git.Fail(git.Commit("hgy initialized"))
 		return
 	}
 
 	Fail(CheckDir(hgyDir))
 
-	index := IndexNew(hgyDir)
-	Fail(index.Parse())
+	store := index.IndexNew(hgyDir)
+	Fail(store.Parse())
 
 	switch {
 	case args["add"] == true:
 		name := args["<name>"].(string)
-		recipeExists := index.RecipeExists(name)
+		recipeExists := store.RecipeExists(name)
 		pathName, err := filepath.Abs(filepath.Join(hgyDir, name))
 
 		pathSrc := ""
-		recipe := Recipe{}
+		recipe := index.Recipe{}
 		if !recipeExists {
 			Fail(err)
 			Fail(os.MkdirAll(filepath.Dir(pathName), 0700))
@@ -190,7 +170,7 @@ func main() {
 				pathSrc = hgyDir
 				recipe.Save(pathName)
 				if !args["--quiet"].(bool) {
-					Fail(Edit(pathName))
+					Fail(util.Edit(pathName))
 				}
 			}
 		} else {
@@ -199,7 +179,7 @@ func main() {
 			}
 		}
 
-		git := GitNew(hgyDir)
+		git := util.GitNew(hgyDir)
 		Fail(recipe.Parse(pathName))
 
 		var images []string
@@ -220,7 +200,7 @@ func main() {
 					imagePath,
 					filepath.Base(image),
 				)
-				Fail(CopyFile(
+				Fail(util.CopyFile(
 					imagePathSrc,
 					imagePathDest,
 				))
@@ -242,7 +222,7 @@ func main() {
 						imagePath,
 						filepath.Base(argImage),
 					)
-					Fail(CopyFile(
+					Fail(util.CopyFile(
 						argImage,
 						imagePathDest,
 					))
@@ -259,10 +239,10 @@ func main() {
 
 		recipe.Data.Images = images
 
-		index.RecipeAdd(name)
+		store.RecipeAdd(name)
 		recipe.Save(pathName)
-		index.Save()
-		git.Fail(git.Add(index.Filename()))
+		store.Save()
+		git.Fail(git.Add(store.Filename()))
 		git.Fail(git.Add(pathName))
 		if git.HasChanges(true) {
 			if !recipeExists {
@@ -277,8 +257,8 @@ func main() {
 		name := args["<name>"].(string)
 		pathName := filepath.Join(hgyDir, name)
 
-		if index.RecipeExists(name) {
-			recipe := Recipe{}
+		if store.RecipeExists(name) {
+			recipe := index.Recipe{}
 			Fail(recipe.Parse(pathName))
 
 			images := make(map[string]bool)
@@ -286,10 +266,10 @@ func main() {
 				images[image] = true
 			}
 
-			Fail(Edit(pathName))
+			Fail(util.Edit(pathName))
 			Fail(recipe.Parse(pathName))
 
-			git := GitNew(hgyDir)
+			git := util.GitNew(hgyDir)
 			for _, image := range recipe.Data.Images {
 				delete(images, image)
 			}
@@ -323,12 +303,12 @@ func main() {
 			filepath.Join(hgyDir, ".images", newName),
 		))
 
-		index.RecipeRemove(name)
-		index.RecipeAdd(newName)
-		index.Save()
+		store.RecipeRemove(name)
+		store.RecipeAdd(newName)
+		store.Save()
 
-		git := GitNew(hgyDir)
-		git.Fail(git.Add(index.Filename()))
+		git := util.GitNew(hgyDir)
+		git.Fail(git.Add(store.Filename()))
 		git.Fail(git.Add(name))
 		git.Fail(git.Add(filepath.Join(".images", name)))
 		git.Fail(git.Add(newName))
@@ -343,25 +323,25 @@ func main() {
 		name := args["<name>"].(string)
 		pathName := filepath.Join(hgyDir, name)
 
-		if index.RecipeExists(name) {
-			index.RecipeRemove(name)
-			Fail(index.Save())
+		if store.RecipeExists(name) {
+			store.RecipeRemove(name)
+			Fail(store.Save())
 
-			git := GitNew(hgyDir)
-			recipe := Recipe{}
+			git := util.GitNew(hgyDir)
+			recipe := index.Recipe{}
 			recipe.Parse(pathName)
 			for _, image := range recipe.Data.Images {
 				git.Fail(git.Rm(image))
 			}
 			git.Fail(git.Rm(name))
-			git.Fail(git.Add(index.Filename()))
+			git.Fail(git.Add(store.Filename()))
 			git.Fail(git.Commit("Recipe removed"))
 		} else {
 			fmt.Printf("Info: No Recipe found with the name '%s'\n", name)
 		}
 	case args["list"] == true:
 		var recipePaths []string
-		for recipeName, _ := range index.Recipes {
+		for recipeName, _ := range store.Recipes {
 			recipePaths = append(
 				recipePaths,
 				filepath.Join(hgyDir, recipeName),
@@ -370,7 +350,7 @@ func main() {
 
 		sort.Strings(recipePaths)
 
-		recipe := Recipe{}
+		recipe := index.Recipe{}
 		for _, recipePath := range recipePaths {
 			Fail(recipe.Parse(recipePath))
 			fmt.Printf("%s (%s)\n", filepath.Base(recipePath), recipe.Data.Name)
@@ -405,64 +385,26 @@ func main() {
 
 		fmt.Printf("Persons: %d\n", persons)
 
-		ingredients := make(map[string]Range)
+		ingredients := make(map[string]index.Range)
 		for _, name := range names {
-			recipe := Recipe{}
+			recipe := index.Recipe{}
 			Fail(recipe.Parse(filepath.Join(hgyDir, name)))
 
 			recipe.CalcIngredients(persons, ingredients)
 		}
 
-		for _, ingredient := range IngredientsMapToList(ingredients) {
+		for _, ingredient := range index.IngredientsMapToList(ingredients) {
 			fmt.Println(ingredient)
 		}
 	case args["serve"] == true:
-		context := &httpContext{hgyDir, index}
+		staticPath := ""
 		if args["--static"] != nil {
-			dir := filepath.Clean(args["--static"].(string))
-			indexPage, err := renderIndex(context, dir)
-			Fail(err)
-			Fail(os.MkdirAll(dir, 0700))
-			Fail(ioutil.WriteFile(
-				filepath.Join(dir, "index.html"),
-				indexPage.Bytes(),
-				0600,
-			))
-			Fail(os.MkdirAll(filepath.Join(dir, "detail"), 0700))
-			for recipeName := range index.Recipes {
-				detailPage, err := renderDetail(context, dir, recipeName)
-				Fail(err)
-				Fail(ioutil.WriteFile(
-					filepath.Join(dir, "detail", recipeName+".html"),
-					detailPage.Bytes(),
-					0600,
-				))
-			}
-			Fail(filepath.Walk(filepath.Join(hgyDir, ".images"), func(path string, info os.FileInfo, err error) error {
-				relPath, err := filepath.Rel(hgyDir, path)
-				if err != nil {
-					return err
-				}
-				destPath := filepath.Join(dir, relPath)
-				err = os.MkdirAll(filepath.Dir(destPath), 0700)
-				if err != nil {
-					return err
-				}
-				if info.Mode().IsRegular() {
-					return CopyFile(path, destPath)
-				} else {
-					return nil
-				}
-			}))
-		} else {
-			fmt.Println("Visit http://localhost:8080")
-			http.Handle("/", httpHandler{context, indexHandler})
-			http.Handle("/detail/", httpHandler{context, detailHandler})
-			http.Handle("/.images/", httpHandler{context, imageHandler})
-			http.ListenAndServe(":8080", nil)
+			staticPath = args["--static"].(string)
 		}
+
+		Fail(view.Serve(hgyDir, store, staticPath))
 	case args["plan"] == true:
-		if len(index.Recipes) == 0 {
+		if len(store.Recipes) == 0 {
 			Fail(fmt.Errorf("No recipes found!"))
 		}
 
@@ -474,7 +416,7 @@ func main() {
 			from, err = time.Parse(format, args["<from>"].(string))
 			Fail(err)
 		}
-		days := len(index.Recipes)
+		days := len(store.Recipes)
 		to := time.Now()
 		if args["<to>"] != nil {
 			to, err = time.Parse(format, args["<to>"].(string))
@@ -484,10 +426,10 @@ func main() {
 
 		var indexes []int
 		var recipeNames []string
-		for recipeName := range index.Recipes {
+		for recipeName := range store.Recipes {
 			recipeNames = append(recipeNames, recipeName)
 		}
-		idx := len(index.Recipes)
+		idx := len(store.Recipes)
 		dateToRecipe := make(map[string]string)
 		for day := 0; day <= days; day++ {
 			if idx >= len(recipeNames) {
@@ -504,13 +446,13 @@ func main() {
 		os.Stdout.Write(content)
 	case args["cook"] == true:
 		name := args["<name>"].(string)
-		if !index.RecipeExists(name) {
+		if !store.RecipeExists(name) {
 			Fail(fmt.Errorf("No Recipe with name '%s' found!", name))
 			return
 		}
-		recipe := Recipe{}
+		recipe := index.Recipe{}
 		Fail(recipe.Parse(filepath.Join(hgyDir, name)))
-		ingredients := make(map[string]Range)
+		ingredients := make(map[string]index.Range)
 
 		persons := int(recipe.Data.Persons)
 		if args["--persons"] != nil {
@@ -519,7 +461,7 @@ func main() {
 		}
 
 		recipe.CalcIngredients(persons, ingredients)
-		tmp := IngredientsMapToList(ingredients)
+		tmp := index.IngredientsMapToList(ingredients)
 
 		tmpfile, err := ioutil.TempFile("/tmp", "hgy")
 		Fail(err)
@@ -531,7 +473,7 @@ func main() {
 			Fail(err)
 		}
 		Fail(tmpfile.Close())
-		Edit(tmpfile.Name())
+		util.Edit(tmpfile.Name())
 
 		idx := 0
 		start := time.Now()
