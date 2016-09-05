@@ -3,67 +3,54 @@ package cmdline
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strconv"
+	"strings"
 
-	"github.com/docopt/docopt-go"
 	"github.com/serztle/hgy/index"
 	"github.com/serztle/hgy/util"
 	"github.com/serztle/hgy/view"
+	"github.com/urfave/cli"
 )
 
-const usage = `
-hgy [SUBCOMMAND] [ARGUMENTS]
+const (
+	// Success is the same as EXIT_SUCCESS in C
+	Success = iota
 
-Maintain and manage a set of recipes in git.
+	// BadArgs passed to cli; not our fault.
+	BadArgs
 
-USAGE:
-    hgy init [<hgydir>]
-    hgy add [--force --quiet] <name> [(--image <image>)...]
-    hgy add [--force --quiet] <name> <path> [(--image <image>)...]
-    hgy edit <name>
-    hgy mv [--force] <name> <new-name>
-    hgy rm <name>
-    hgy list [--images]
-    hgy grocery [(--persons <persons>)] [<names>...] [(--plan <plan>...)]
-    hgy cook [(--persons <persons>)] <name>
-    hgy serve [(--static <dir>)]
-    hgy plan [<from>] [<to>]
-    hgy -h | --help
-    hgy --version
+	// UnknownError is an uncategorized error, probably our fault.
+	UnknownError
+)
 
-OPTIONS:
-    -h --help            Show this screen.
-    -i --image <image>   Path to a image file.
-    -f --force           Disables safeguards.
-    -q --quiet           Do not ask the user.
-    --persons <persons>  For how many persons to you want to cook. [default: 2]
-	--plan <plan>        A generated plan
-    --static <dir>       Render static html pages in given directory.
-    --images             List also all images.
+const (
+	DefaultPersons = 3
+)
 
-MANAGING COMMANDS:
-    init                 Create a new git repo with recipes in it.
+type checkFunc func(ctx *cli.Context) int
 
-SINGLE RECIPES:
-    add                  Add a new recipe and launch editor.
-    edit                 Edit an existing recipe.
-    mv                   Rename an existing recipe.
-    rm                   Remove an existing recipe.
+func withArgCheck(checker checkFunc, handler func(*cli.Context) error) func(*cli.Context) error {
+	return func(ctx *cli.Context) error {
+		if checker(ctx) != Success {
+			os.Exit(BadArgs)
+		}
 
-LISTING AND VIEWING:
-    list                 List all known recipes.
-    grocery              Create a sorted & merged item list from the names
-                         for the next supermarket visit.
-    serve                Show a nice gallery of recipes on localhost:8080.
-    plan                 Create a food plan.
-    cook                 Step-by-step instructions
-`
+		return handler(ctx)
+	}
+}
 
-func Trap(err error) {
-	if err != nil {
-		fmt.Printf("Error: %v. Abort.\n", err)
-		os.Exit(1)
+func needAtLeast(min int) checkFunc {
+	return func(ctx *cli.Context) int {
+		if ctx.NArg() < min {
+			if min == 1 {
+				fmt.Printf("Need at least %d argument.", min)
+			} else {
+				fmt.Printf("Need at least %d arguments.", min)
+			}
+			cli.ShowCommandHelp(ctx, ctx.Command.Name)
+			return BadArgs
+		}
+
+		return Success
 	}
 }
 
@@ -87,125 +74,200 @@ func CheckDir(dir string) error {
 	}
 }
 
+func withIndex(handler func(ctx *cli.Context, store *index.Index) error) func(*cli.Context) error {
+	return func(ctx *cli.Context) error {
+		repoDir := ctx.GlobalString("directory")
+		if err := CheckDir(repoDir); err != nil {
+			return err
+		}
+
+		store := index.IndexNew(repoDir)
+		if err := store.Parse(); err != nil {
+			return err
+		}
+
+		return handler(ctx, store)
+	}
+}
+
+func formatGroup(category string) string {
+	return strings.ToUpper(category) + " COMMANDS"
+}
+
 func Main() {
-	args, err := docopt.Parse(usage, nil, true, "hgy v0.01 Raah Raah Bläh!", false)
-	Trap(err)
+	app := cli.NewApp()
+	app.Name = "hgy"
+	app.Usage = "Mantain and manage a set of recipes in git."
+	app.Version = "v0.01 Raah Raah Bläh!"
 
-	hgyDir := "."
-	if args["<hgydir>"] != nil {
-		hgyDir = args["<hgydir>"].(string)
-	} else if envDir := os.Getenv("HGY_DIR"); envDir != "" {
-		hgyDir = envDir
+	// Groups:
+	manageGroup := formatGroup("managing")
+	singleGroup := formatGroup("single recipes")
+	viewerGroup := formatGroup("viewing")
+
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "force,f",
+			Usage: "Force the operation.",
+		},
+		cli.BoolFlag{
+			Name:  "quiet,q",
+			Usage: "Be quiet",
+		},
+		cli.StringFlag{
+			Name:   "directory,d",
+			Usage:  "Alternative path to the hgy repository",
+			Value:  ".",
+			EnvVar: "HGY_DIR",
+		},
 	}
 
-	if args["init"] == true {
-		if stat, err := os.Stat(hgyDir); os.IsNotExist(err) {
-			Trap(os.MkdirAll(hgyDir, 0700))
-		} else if !stat.IsDir() {
-			Trap(fmt.Errorf("%s already exists and is not a directory!", hgyDir))
-		}
-
-		git := util.GitNew(hgyDir)
-		store := index.IndexNew(hgyDir)
-
-		if git.Exists() && store.Exists() {
-			fmt.Printf("There is already a hgy archiv in '%s'. Nothing to do.\n", hgyDir)
-			return
-		} else if git.Exists() {
-			Trap(fmt.Errorf("There is already a git archiv in '%s'", hgyDir))
-		} else if store.Exists() {
-			Trap(fmt.Errorf("There is already a store file in '%s'", hgyDir))
-		}
-
-		git.Trap(git.Init())
-		git.Trap(store.Save())
-		git.Trap(git.Add(store.Filename()))
-		git.Trap(git.Commit("hgy initialized"))
-		return
+	flagPersons := cli.IntFlag{
+		Name:  "p,persons",
+		Usage: "Number of persons to calculate for.",
+		Value: DefaultPersons,
 	}
 
-	Trap(CheckDir(hgyDir))
+	app.Commands = []cli.Command{
+		{
+			Name:        "init",
+			Category:    manageGroup,
+			Usage:       "Create a new git repo for recipes.",
+			ArgsUsage:   "<dir>",
+			Description: "Create a new, empty git repo that can be filled with recipes at <dir>.",
+			Action: func(ctx *cli.Context) error {
+				return handleInit(ctx.GlobalString("directory"))
+			},
+		}, {
+			Name:        "add",
+			Category:    singleGroup,
+			Usage:       "Add a new recipe.",
+			ArgsUsage:   "<name> <path> [(--image <path>)...]",
+			Description: "Add a new recipe with the handle `name` located at <path>, possibly with images.",
+			Flags: []cli.Flag{
+				cli.StringSliceFlag{
+					Name:  "image",
+					Usage: "Path to an image file.",
+				},
+			},
+			Action: withArgCheck(needAtLeast(1), withIndex(func(ctx *cli.Context, store *index.Index) error {
+				name := ctx.Args().First()
+				path := ctx.Args().Get(1)
 
-	store := index.IndexNew(hgyDir)
-	Trap(store.Parse())
+				force, quiet := ctx.GlobalBool("force"), ctx.GlobalBool("quiet")
+				images := ctx.StringSlice("image")
 
-	switch {
-	case args["add"] == true:
-		name := args["<name>"].(string)
-		quiet := args["--quiet"].(bool)
-		force := args["--force"].(bool)
+				return handleAdd(store, name, path, force, quiet, images)
+			})),
+		}, {
+			Name:        "edit",
+			Category:    singleGroup,
+			Usage:       "Edit an existing recipe.",
+			ArgsUsage:   "<name>",
+			Description: "Open an existing recipe in $EDITOR and save it afterwards.",
+			Action: withArgCheck(needAtLeast(1), withIndex(func(ctx *cli.Context, store *index.Index) error {
+				return handleEdit(store, ctx.Args().First())
+			})),
+		}, {
+			Name:        "rm",
+			Category:    singleGroup,
+			Usage:       "Remove an existing recipe.",
+			ArgsUsage:   "<name>",
+			Description: "Remove an existing recipe from the current database (may be restored with git)",
+			Action: withArgCheck(needAtLeast(1), withIndex(func(ctx *cli.Context, store *index.Index) error {
+				return handleRemove(store, ctx.Args().First())
+			})),
+		}, {
+			Name:        "mv",
+			Category:    singleGroup,
+			Usage:       "Rename an existing recipe.",
+			ArgsUsage:   "<old-name> <new-name>",
+			Description: "Give an existing recipe a new name.",
+			Action: withArgCheck(needAtLeast(2), withIndex(func(ctx *cli.Context, store *index.Index) error {
+				force := ctx.GlobalBool("force")
+				oldName := ctx.Args().First()
+				newName := ctx.Args().Get(1)
+				return handleMove(store, oldName, newName, force)
+			})),
+		}, {
+			Name:        "list",
+			Category:    viewerGroup,
+			Usage:       "List all recipes.",
+			ArgsUsage:   "[--show-images]",
+			Description: "List all recipes and possibly all associated images.",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "i,show-images",
+					Usage: "Show also the paths to all available images.",
+				},
+			},
+			Action: withIndex(func(ctx *cli.Context, store *index.Index) error {
+				return handleList(store, ctx.Bool("show-images"))
+			}),
+		}, {
+			Name:        "grocery",
+			Category:    viewerGroup,
+			Usage:       "List all ingredients for your next supermarket visit.",
+			ArgsUsage:   "[<name>...] [(--plan <plan>)...]",
+			Description: "Create a grocery list for certain recipes or plans, multiplied to the person count.",
+			Flags: []cli.Flag{
+				flagPersons,
+				cli.StringSliceFlag{
+					Name:  "P,plan",
+					Usage: "Generate groceries from a plan produced by the plan subcommand.",
+				},
+			},
+			Action: withIndex(func(ctx *cli.Context, store *index.Index) error {
+				names := ctx.Args()
+				plans := ctx.StringSlice("plan")
+				persons := ctx.Int("persons")
 
-		path := ""
-		if args["<path>"] != nil {
-			path, err = filepath.Abs(args["<path>"].(string))
-			Trap(err)
-		}
+				return handleGrocery(store, names, plans, persons)
+			}),
+		}, {
+			Name:        "serve",
+			Category:    viewerGroup,
+			Usage:       "Visualize the recipe database in your browser.",
+			Description: "Render a web gallery for all currently know recipes, either directly served or written to `--static-dir.`",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "static-dir",
+					Usage: "Do not serve, render files static to this directory.",
+				},
+			},
+			Action: withIndex(func(ctx *cli.Context, store *index.Index) error {
+				return view.Serve(store, ctx.String("static-dir"))
+			}),
+		}, {
+			Name:        "plan",
+			Category:    viewerGroup,
+			Usage:       "Produce a recipe plan for a certain timespan",
+			ArgsUsage:   "[<from-date> [<to-date>]]",
+			Description: "Produce a recipe plan starting at <from-date> (or today) and ending at <to-date>.",
+			Action: withIndex(func(ctx *cli.Context, store *index.Index) error {
+				fromDate := ctx.Args().First()
+				toDate := ctx.Args().Get(1)
+				return handlePlan(store, fromDate, toDate)
+			}),
+		}, {
+			Name:        "cook",
+			Category:    viewerGroup,
+			Usage:       "Give a step-by-step guide for a recipe.",
+			ArgsUsage:   "<name> [(--persons <n>)]",
+			Description: "Hold your hands while cooking by checking all ingredients and giving a step-by-step guide.",
+			Flags: []cli.Flag{
+				flagPersons,
+			},
+			Action: withArgCheck(needAtLeast(1), withIndex(func(ctx *cli.Context, store *index.Index) error {
+				name := ctx.Args().First()
+				persons := ctx.Int("persons")
+				return handleCook(store, name, persons)
+			})),
+		},
+	}
 
-		var images []string
-		if args["--image"] != nil {
-			if argImages, ok := args["--image"].([]string); ok {
-				images = argImages
-			}
-		}
-
-		Trap(handleAdd(store, name, path, force, quiet, images))
-	case args["edit"] == true:
-		name := args["<name>"].(string)
-		Trap(handleEdit(store, name))
-	case args["mv"] == true:
-		name := args["<name>"].(string)
-		newName := args["<new-name>"].(string)
-		force := args["--force"].(bool)
-		Trap(handleMove(store, name, newName, force))
-	case args["rm"] == true:
-		name := args["<name>"].(string)
-		Trap(handleRemove(store, name))
-	case args["list"] == true:
-		images := args["--images"].(bool)
-		Trap(handleList(store, images))
-	case args["grocery"] == true:
-		var plans []string
-		if args["--plan"] != nil {
-			plans = args["--plan"].([]string)
-		}
-		var names []string
-		if args["<names>"] != nil {
-			names = args["<names>"].([]string)
-		}
-		persons, err := strconv.Atoi(args["--persons"].(string))
-		Trap(err)
-
-		Trap(handleGrocery(store, names, plans, persons))
-	case args["serve"] == true:
-		staticPath := ""
-		if args["--static"] != nil {
-			staticPath = args["--static"].(string)
-		}
-
-		Trap(view.Serve(hgyDir, store, staticPath))
-	case args["plan"] == true:
-		from := ""
-		if args["<from>"] != nil {
-			from = args["<from>"].(string)
-		}
-		to := ""
-		if args["<to>"] != nil {
-			to = args["<to>"].(string)
-		}
-		Trap(handlePlan(store, from, to))
-	case args["cook"] == true:
-		name := args["<name>"].(string)
-		if !store.RecipeExists(name) {
-			Trap(fmt.Errorf("No Recipe with name '%s' found!", name))
-			return
-		}
-
-		persons := -1
-		if args["--persons"] != nil {
-			persons, err = strconv.Atoi(args["--persons"].(string))
-			Trap(err)
-		}
-
-		Trap(handleCook(store, name, persons))
+	if err := app.Run(os.Args); err != nil {
+		fmt.Printf("%v\n", err)
+		os.Exit(1)
 	}
 }

@@ -3,4 +3,4 @@
 . ./scripts/test/setup_hgy
 
 hgy list
-hgy list --images
+hgy list --show-images

@@ -120,8 +120,7 @@ const detailTemplate = `
 `
 
 type httpContext struct {
-	hgyDir string
-	index  *index.Index
+	index *index.Index
 }
 
 type httpHandler struct {
@@ -161,7 +160,7 @@ func renderIndex(context *httpContext, root string) (bytes.Buffer, error) {
 	for recipeName := range context.index.Recipes {
 		recipe := index.Recipe{}
 		recipe.Name = recipeName
-		recipePath := filepath.Join(context.hgyDir, recipeName)
+		recipePath := filepath.Join(context.index.RepoDir(), recipeName)
 		if err := recipe.Parse(recipePath); err != nil {
 			return html, err
 		}
@@ -202,7 +201,7 @@ func renderDetail(context *httpContext, root string, recipeName string) (bytes.B
 		return html, err
 	}
 
-	recipe := index.RecipeNew(context.hgyDir, recipeName)
+	recipe := index.RecipeNew(context.index.RepoDir(), recipeName)
 	recipe.Name = recipeName
 	if err := recipe.Load(); err != nil {
 		return html, err
@@ -238,7 +237,7 @@ func detailHandler(context *httpContext, w http.ResponseWriter, r *http.Request)
 
 func imageHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
 	imagePath := filepath.Join(
-		context.hgyDir,
+		context.index.RepoDir(),
 		r.RequestURI[1:],
 	)
 	if data, err := ioutil.ReadFile(imagePath); err != nil {
@@ -255,9 +254,9 @@ func Fail(err error) {
 	}
 }
 
-func renderStatic(hgyDir string, store *index.Index, staticDir string) error {
+func renderStatic(store *index.Index, staticDir string) error {
 	dir := filepath.Clean(staticDir)
-	context := &httpContext{hgyDir, store}
+	context := &httpContext{store}
 	indexPage, err := renderIndex(context, dir)
 	Fail(err)
 	Fail(os.MkdirAll(dir, 0700))
@@ -278,9 +277,9 @@ func renderStatic(hgyDir string, store *index.Index, staticDir string) error {
 		))
 	}
 
-	imagePath := filepath.Join(hgyDir, ".images")
+	imagePath := filepath.Join(store.RepoDir(), ".images")
 	return filepath.Walk(imagePath, func(path string, info os.FileInfo, err error) error {
-		relPath, err := filepath.Rel(hgyDir, path)
+		relPath, err := filepath.Rel(store.RepoDir(), path)
 		if err != nil {
 			return err
 		}
@@ -289,20 +288,21 @@ func renderStatic(hgyDir string, store *index.Index, staticDir string) error {
 		if err != nil {
 			return err
 		}
+
 		if info.Mode().IsRegular() {
 			return util.CopyFile(path, destPath)
-		} else {
-			return nil
 		}
+
+		return nil
 	})
 }
 
-func Serve(hgyDir string, store *index.Index, staticDir string) error {
+func Serve(store *index.Index, staticDir string) error {
 	if staticDir != "" {
-		return renderStatic(hgyDir, store, staticDir)
+		return renderStatic(store, staticDir)
 	}
 
-	context := &httpContext{hgyDir, store}
+	context := &httpContext{store}
 	fmt.Println("Visit http://localhost:8080")
 	http.Handle("/", httpHandler{context, indexHandler})
 	http.Handle("/detail/", httpHandler{context, detailHandler})

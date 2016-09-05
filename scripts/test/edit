@@ -3,6 +3,6 @@
 . ./scripts/test/setup_hgy
 
 hgy edit foobar
-hgy add --quiet foobar
+hgy --quiet add foobar
 hgy edit foobar
 hgy edit gulasch.yml

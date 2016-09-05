@@ -57,7 +57,7 @@ func handleCook(store *index.Index, name string, persons int) error {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("\033[2J]\033[1;1H]")
+	fmt.Print("\033[2J\033[1;1H")
 	for {
 		elapsed = time.Now().Sub(start)
 

@@ -3,5 +3,5 @@
 . ./scripts/test/setup_hgy
 
 hgy plan
-hgy plan 20160801
-hgy plan 20160801 20160815
+hgy plan 2016-08-01
+hgy plan 2016-08-01 2016-08-15

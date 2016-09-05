@@ -18,7 +18,7 @@ func handlePlan(store *index.Index, fromDate string, toDate string) error {
 
 	rand.Seed(time.Now().UnixNano())
 
-	format := "20060102"
+	format := "2006-01-02"
 
 	from := time.Now()
 	to := time.Now()

@@ -6,7 +6,7 @@ hgy add gulasch $EX_DIR/gulasch.yml
 
 touch $HGY_DIR/foobar
 hgy add foobar $EX_DIR/gulasch.yml
-hgy add --force foobar $EX_DIR/gulasch.yml
+hgy --force add foobar $EX_DIR/gulasch.yml
 
 for recipe in `ls $EX_DIR/*.yml`; do
     basename=${recipe##*/}
@@ -15,7 +15,7 @@ for recipe in `ls $EX_DIR/*.yml`; do
 done
 
 hgy add aelgsons_versuchung2 $EX_DIR/aelgsons_versuchung.yml --image $EX_DIR/images/auberginen_2.jpg --image $EX_DIR/images/auberginen_3.jpg
-hgy add --quiet recipe_dummy1
-hgy add --quiet sidedish/recipe_dummy2
+hgy --quiet add recipe_dummy1
+hgy --quiet add sidedish/recipe_dummy2
 hgy add gulasch --image $EX_DIR/images/SIhiZHf.jpg
 hgy add gulasch --image $EX_DIR/images/SIhiZHf.jpg

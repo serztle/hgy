@@ -2,5 +2,5 @@
 . ./scripts/test/setup
 . ./scripts/test/setup_hgy
 
-hgy serve --static /tmp/hgy/html
+hgy serve --static-dir /tmp/hgy/html
 xdg-open /tmp/hgy/html/index.html
