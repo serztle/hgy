@@ -15,7 +15,7 @@ func handleInit(repoDir string) error {
 		return fmt.Errorf("%s already exists and is not a directory!", repoDir)
 	}
 
-	store := index.IndexNew(repoDir)
+	store := index.NewIndex(repoDir)
 	git := util.NewGit(repoDir)
 
 	if git.Exists() && store.Exists() {

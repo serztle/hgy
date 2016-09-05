@@ -11,6 +11,8 @@ import (
 	"unicode"
 )
 
+// TODO: type Metric
+
 type Range struct {
 	From float64
 	To   float64
@@ -36,11 +38,8 @@ type Recipe struct {
 	}
 }
 
-func RecipeNew(dir string, name string) Recipe {
-	return Recipe{
-		Name: name,
-		Dir:  dir,
-	}
+func NewRecipe(dir string, name string) Recipe {
+	return Recipe{Name: name, Dir: dir}
 }
 
 func (r *Recipe) Path() string {
@@ -52,16 +51,19 @@ func (r *Recipe) Load() error {
 }
 
 func (r *Recipe) Parse(path string) error {
-	if content, err := ioutil.ReadFile(path); err != nil {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
 		return err
-	} else {
-		if err := yaml.Unmarshal(content, &r.Data); err != nil {
-			return fmt.Errorf("Possibly not valid yaml in '%s' (%v)", path, err)
-		}
 	}
+
+	if err := yaml.Unmarshal(content, &r.Data); err != nil {
+		return fmt.Errorf("Possibly not valid yaml in '%s' (%v)", path, err)
+	}
+
 	return nil
 }
 
+// TODO: Check and enhance if possible
 func (r *Recipe) CalcIngredients(persons int, ingredients map[string]Range) {
 	factor := float64(persons) / float64(r.Data.Persons)
 
@@ -114,22 +116,14 @@ func (r *Recipe) CalcIngredients(persons int, ingredients map[string]Range) {
 				delete(ingredients, key)
 				break
 			case "l":
-				tmp := ingredients["g"+rest]
+				tmp := ingredients["ml"+rest]
 				tmp.From = value.From * 1000
 				ingredients["ml"+rest] = tmp
-				//ingredients["ml"+rest].To = value.From * 1000
 				delete(ingredients, key)
 				break
 			}
 		}
 	}
-
-	//var keys []string
-	//for key := range ingredients {
-	//	keys = append(keys, key)
-	//}
-
-	//sort.Strings(keys)
 }
 
 func IngredientsMapToList(ingredients map[string]Range) []string {
@@ -142,8 +136,8 @@ func IngredientsMapToList(ingredients map[string]Range) []string {
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		from := int(int(math.Floor(ingredients[key].From + 0.5)))
-		to := int(int(math.Floor(ingredients[key].To + 0.5)))
+		from := int(math.Floor(ingredients[key].From + 0.5))
+		to := int(math.Floor(ingredients[key].To + 0.5))
 
 		if from == 0 {
 			result = append(result, fmt.Sprintf("%s", key))
@@ -172,9 +166,11 @@ func (r *Recipe) Save(path string) error {
 	if err != nil {
 		return err
 	}
+
 	if err := ioutil.WriteFile(path, []byte(content), 0600); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -183,5 +179,6 @@ func (r *Recipe) String() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Converting structure to yaml failed (%v)", err)
 	}
+
 	return string(content), nil
 }

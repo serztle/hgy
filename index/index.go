@@ -14,7 +14,7 @@ type Index struct {
 	Recipes   map[string]bool
 }
 
-func IndexNew(dir string) *Index {
+func NewIndex(dir string) *Index {
 	return &Index{
 		indexPath: filepath.Join(dir, ".nom"),
 		repoDir:   dir,
@@ -35,9 +35,11 @@ func (i *Index) Parse() error {
 	if err != nil {
 		return fmt.Errorf("Reading index %s (%v)!", i.indexPath, err)
 	}
+
 	if err := yaml.Unmarshal(content, i.Recipes); err != nil {
 		return fmt.Errorf("Seems like index %s is not valid yaml (%v)!", i.indexPath, err)
 	}
+
 	return nil
 }
 
@@ -52,11 +54,8 @@ func (i *Index) Exists() bool {
 }
 
 func (i *Index) RecipeExists(name string) bool {
-	if _, ok := i.Recipes[name]; ok {
-		return true
-	} else {
-		return false
-	}
+	_, ok := i.Recipes[name]
+	return ok
 }
 
 func (i *Index) RecipeAdd(name string) {
@@ -68,19 +67,23 @@ func (i *Index) RecipeRemove(name string) {
 }
 
 func (i *Index) Save() error {
-	if content, err := yaml.Marshal(i.Recipes); err != nil {
+	content, err := yaml.Marshal(i.Recipes)
+	if err != nil {
 		return fmt.Errorf("Making yaml for index %s (%v)!", i.indexPath, err)
-	} else if err := ioutil.WriteFile(i.indexPath, content, 0666); err != nil {
-		return fmt.Errorf("Writing index to %s (%v)!", i.indexPath, err)
-	} else {
-		return nil
 	}
+
+	if err := ioutil.WriteFile(i.indexPath, content, 0666); err != nil {
+		return fmt.Errorf("Writing index to %s (%v)!", i.indexPath, err)
+	}
+
+	return nil
 }
 
 func (i *Index) String() (string, error) {
-	if content, err := yaml.Marshal(i.Recipes); err != nil {
+	content, err := yaml.Marshal(i.Recipes)
+	if err != nil {
 		return "", err
-	} else {
-		return string(content), err
 	}
+
+	return string(content), nil
 }

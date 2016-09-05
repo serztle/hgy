@@ -29,26 +29,20 @@ func (g *Git) Exec(command string, args ...string) error {
 	return nil
 }
 
-func (g *Git) Trap(err error) {
-	if err == nil {
-		return
-	}
-
-	if errReset := g.Exec("reset"); errReset != nil {
-		fmt.Printf(
-			"Error: Git reset failed (%v). Something went horribly wrong!\nCause: %v. Abort.\n",
-			errReset,
-			err,
-		)
-		os.Exit(1)
-	} else {
-		fmt.Printf("Error: %v. Abort.\n", err)
-		os.Exit(1)
-	}
-}
-
 func (g *Git) WithTransaction(fn func() error) {
-	g.Trap(fn())
+	if err := fn(); err != nil {
+		if errReset := g.Exec("reset"); errReset != nil {
+			fmt.Printf(
+				"Error: Git reset failed (%v). Something went horribly wrong!\nCause: %v. Abort.\n",
+				errReset,
+				err,
+			)
+			os.Exit(1)
+		} else {
+			fmt.Printf("Error: %v. Abort.\n", err)
+			os.Exit(1)
+		}
+	}
 }
 
 func (g *Git) Exists() bool {

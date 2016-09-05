@@ -283,7 +283,7 @@ func indexHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (i
 
 func renderDetail(store *index.Index, root string, recipeName string) (*bytes.Buffer, error) {
 	return withTemplate("detail", detailTemplate, func() (interface{}, error) {
-		recipe := index.RecipeNew(store.RepoDir(), recipeName)
+		recipe := index.NewRecipe(store.RepoDir(), recipeName)
 		recipe.Name = recipeName
 		if err := recipe.Load(); err != nil {
 			return nil, err

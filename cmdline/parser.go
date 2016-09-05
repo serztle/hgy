@@ -56,7 +56,7 @@ func needAtLeast(min int) checkFunc {
 
 func CheckDir(dir string) error {
 	git := util.NewGit(dir)
-	store := index.IndexNew(dir)
+	store := index.NewIndex(dir)
 
 	defaultError := fmt.Errorf("Seems not to be a nom archiv in '%s'", dir)
 
@@ -81,7 +81,7 @@ func withIndex(handler func(ctx *cli.Context, store *index.Index) error) func(*c
 			return err
 		}
 
-		store := index.IndexNew(repoDir)
+		store := index.NewIndex(repoDir)
 		if err := store.Parse(); err != nil {
 			return err
 		}
