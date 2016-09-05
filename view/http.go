@@ -19,12 +19,13 @@ const baseTemplate = `
 <head>
 <title>{{.Title}}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Vollkorn" />
 <style>
 div.img {
     margin: 5px;
     border: 1px solid #ccc;
     float: left;
-    width: 180px;
+    width: 300px;
 }
 
 div.img:hover {
@@ -39,16 +40,117 @@ div.img img {
 div.desc {
     padding: 15px;
     text-align: center;
+
+    font-size: 19px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 23px;
+    color: rgb(230,85,1);
 }
+
 a {
    outline: 0;
 }
+
 a.seamless:link,
 a.seamless:visited,
 a.seamless:active {
 	color:black;
 	text-decoration:none;
 }
+
+#center-detail {
+    margin:    0 auto;
+    max-width: 50%;
+    background-color: rgb(255,253,253);
+}
+
+#one-true { overflow: hidden; }
+#one-true .col {
+  width: 27%;
+  padding: 30px 3.15% 0;
+  float: left;
+  margin-bottom: -99999px;
+  padding-bottom: 99999px;
+}
+
+#one-true .col:nth-child(1) { margin-left: 33.3%; }
+#one-true .col:nth-child(2) { margin-left: -66.3%; }
+#one-true .col:nth-child(3) { left: 0; }
+#one-true p { margin-bottom: 30px; } /* Bottom padding on col is busy */
+
+.col img {
+	box-shadow: 3px 3px 10px #AAAAAA;
+	border-radius: 4px;
+	transition: all 300ms ease;
+}
+
+.col img:hover {
+	box-shadow: 9px 9px 10px #CCBBAA;
+    transition: all 300ms ease;
+}
+
+html {
+    font-family: Vollkorn;
+}
+
+h1 {
+    font-family: Vollkorn;
+    font-size: 27px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 600;
+    line-height: 23px;
+    color: rgb(230,85,1);
+}
+
+h2 {
+    font-family: Vollkorn;
+    font-size: 19px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 500;
+    line-height: 23px;
+    color: rgb(210,75,0);
+}
+
+h3 {
+    font-family: Vollkorn;
+    font-size: 17px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 23px;
+}
+
+p {
+    font-family: Vollkorn;
+    font-size: 15px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 23px;
+}
+
+blockquote {
+    font-family: Vollkorn;
+    font-size: 17px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 23px;
+}
+
+pre {
+    font-family: Vollkorn;
+    font-size: 11px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 23px;
+}
+
 </style>
 </head>
 <body>
@@ -59,9 +161,11 @@ a.seamless:active {
 
 const indexTemplate = `
 {{define "body"}}
+<div id="one-true">
 {{range .Recipes}}
-	<div class="img">
+	<div class="col">
 		{{if (ge (len .Data.Images) 1) }}
+			<center>
 			<a target="_blank" href="detail/{{.Name}}.html">
 			  <img src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}" width="300" height="200">
 			</a>
@@ -69,8 +173,10 @@ const indexTemplate = `
 		<a class="seamless" href="detail/{{.Name}}.html">
 			<div class="desc">{{.Data.Name}}</div>
 		</a>
+		</center>
 	</div>
 {{end}}
+</div>
 {{end}}
 `
 const detailTemplate = `
@@ -82,6 +188,7 @@ const detailTemplate = `
 	</ul>
 {{end}}
 {{define "body"}}
+<div id="center-detail">
     <h1 class="title">{{.Recipe.Data.Name}}</h1>
 
     <div class="duration">
@@ -116,165 +223,138 @@ const detailTemplate = `
         </div>
         {{end}}
     </div>
+</div>
 {{end}}
 `
 
-type httpContext struct {
-	index *index.Index
-}
-
-type httpHandler struct {
-	context *httpContext
-	handler func(*httpContext, http.ResponseWriter, *http.Request) (int, error)
-}
-
-func (hh httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	status, err := hh.handler(hh.context, w, r)
+func withTemplate(name, tmplTxt string, fn func() (interface{}, error)) (*bytes.Buffer, error) {
+	t, err := template.New(name).Parse(baseTemplate + tmplTxt)
 	if err != nil {
-		switch status {
-		case http.StatusNotFound:
-			http.NotFound(w, r)
-		default:
-			http.Error(
-				w,
-				fmt.Sprintf(
-					"%s: %v",
-					http.StatusText(status),
-					err,
-				),
-				status,
-			)
-		}
+		return nil, err
 	}
-}
 
-func renderIndex(context *httpContext, root string) (bytes.Buffer, error) {
-	var html bytes.Buffer
-
-	t, err := template.New("index").Parse(baseTemplate + indexTemplate)
+	data, err := fn()
 	if err != nil {
-		return html, err
+		return nil, err
 	}
 
-	var recipes []index.Recipe
-	for recipeName := range context.index.Recipes {
-		recipe := index.Recipe{}
-		recipe.Name = recipeName
-		recipePath := filepath.Join(context.index.RepoDir(), recipeName)
-		if err := recipe.Parse(recipePath); err != nil {
-			return html, err
-		}
-		recipes = append(recipes, recipe)
-	}
-
-	var data struct {
-		Title   string
-		Root    string
-		Recipe  index.Recipe
-		Recipes []index.Recipe
-	}
-
-	data.Title = "Overview"
-	data.Root = root
-	data.Recipes = recipes
-
+	html := bytes.Buffer{}
 	if err := t.Execute(&html, data); err != nil {
-		return html, err
-	} else {
-		return html, nil
+		return nil, err
 	}
+
+	return &html, nil
 }
 
-func indexHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
-	if html, err := renderIndex(context, ""); err != nil {
+func renderIndex(store *index.Index, root string) (*bytes.Buffer, error) {
+	return withTemplate("index", indexTemplate, func() (interface{}, error) {
+		recipes := []index.Recipe{}
+		for recipeName := range store.Recipes {
+			recipe := index.Recipe{}
+			recipe.Name = recipeName
+			recipePath := filepath.Join(store.RepoDir(), recipeName)
+			if err := recipe.Parse(recipePath); err != nil {
+				return nil, err
+			}
+
+			recipes = append(recipes, recipe)
+		}
+
+		return struct {
+			Title   string
+			Root    string
+			Recipes []index.Recipe
+		}{
+			Title:   "Overview",
+			Root:    root,
+			Recipes: recipes,
+		}, nil
+	})
+}
+
+func indexHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (int, error) {
+	html, err := renderIndex(store, "")
+	if err != nil {
 		return 500, err
-	} else {
-		return w.Write(html.Bytes())
 	}
+
+	return w.Write(html.Bytes())
 }
 
-func renderDetail(context *httpContext, root string, recipeName string) (bytes.Buffer, error) {
-	var html bytes.Buffer
+func renderDetail(store *index.Index, root string, recipeName string) (*bytes.Buffer, error) {
+	return withTemplate("detail", detailTemplate, func() (interface{}, error) {
+		recipe := index.RecipeNew(store.RepoDir(), recipeName)
+		recipe.Name = recipeName
+		if err := recipe.Load(); err != nil {
+			return nil, err
+		}
 
-	t, err := template.New("detail").Parse(baseTemplate + detailTemplate)
-	if err != nil {
-		return html, err
-	}
-
-	recipe := index.RecipeNew(context.index.RepoDir(), recipeName)
-	recipe.Name = recipeName
-	if err := recipe.Load(); err != nil {
-		return html, err
-	}
-
-	var data struct {
-		Title   string
-		Root    string
-		Recipe  index.Recipe
-		Recipes []index.Recipe
-	}
-
-	data.Title = recipe.Data.Name
-	data.Root = root
-	data.Recipe = recipe
-
-	if err := t.Execute(&html, data); err != nil {
-		return html, err
-	} else {
-		return html, nil
-	}
+		return struct {
+			Title  string
+			Root   string
+			Recipe index.Recipe
+		}{
+			Title:  recipe.Data.Name,
+			Root:   root,
+			Recipe: recipe,
+		}, nil
+	})
 }
 
-func detailHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
+func detailHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (int, error) {
+	// TODO: Might crash.
 	recipeName := r.RequestURI[8 : len(r.RequestURI)-5]
 
-	if html, err := renderDetail(context, "", recipeName); err != nil {
-		return 500, err
-	} else {
-		return w.Write(html.Bytes())
-	}
-}
-
-func imageHandler(context *httpContext, w http.ResponseWriter, r *http.Request) (int, error) {
-	imagePath := filepath.Join(
-		context.index.RepoDir(),
-		r.RequestURI[1:],
-	)
-	if data, err := ioutil.ReadFile(imagePath); err != nil {
-		return 500, fmt.Errorf("Error: reading image %s (%v)", imagePath, err)
-	} else {
-		return w.Write(data)
-	}
-}
-
-func Fail(err error) {
+	html, err := renderDetail(store, "", recipeName)
 	if err != nil {
-		fmt.Printf("Error: %v. Abort.\n", err)
-		os.Exit(1)
+		return 500, err
 	}
+
+	return w.Write(html.Bytes())
+}
+
+func imageHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (int, error) {
+	// TODO: Might crash a bit harder.
+	imagePath := filepath.Join(store.RepoDir(), r.RequestURI[1:])
+
+	data, err := ioutil.ReadFile(imagePath)
+	if err != nil {
+		return 500, fmt.Errorf("Error: reading image %s (%v)", imagePath, err)
+	}
+
+	return w.Write(data)
 }
 
 func renderStatic(store *index.Index, staticDir string) error {
 	dir := filepath.Clean(staticDir)
-	context := &httpContext{store}
-	indexPage, err := renderIndex(context, dir)
-	Fail(err)
-	Fail(os.MkdirAll(dir, 0700))
-	Fail(ioutil.WriteFile(
-		filepath.Join(dir, "index.html"),
-		indexPage.Bytes(),
-		0600,
-	))
+	indexPage, err := renderIndex(store, dir)
+	if err != nil {
+		return err
+	}
 
-	Fail(os.MkdirAll(filepath.Join(dir, "detail"), 0700))
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+
+	indexPath := filepath.Join(dir, "index.html")
+	if err := ioutil.WriteFile(indexPath, indexPage.Bytes(), 0600); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(dir, "detail"), 0700); err != nil {
+		return err
+	}
+
 	for recipeName := range store.Recipes {
-		detailPage, err := renderDetail(context, dir, recipeName)
-		Fail(err)
-		Fail(ioutil.WriteFile(
-			filepath.Join(dir, "detail", recipeName+".html"),
-			detailPage.Bytes(),
-			0600,
-		))
+		detailPage, err := renderDetail(store, dir, recipeName)
+		if err != nil {
+			return err
+		}
+
+		detailPath := filepath.Join(dir, "detail", recipeName+".html")
+		if err := ioutil.WriteFile(detailPath, detailPage.Bytes(), 0600); err != nil {
+			return err
+		}
 	}
 
 	imagePath := filepath.Join(store.RepoDir(), ".images")
@@ -297,15 +377,40 @@ func renderStatic(store *index.Index, staticDir string) error {
 	})
 }
 
+type httpHandler struct {
+	store   *index.Index
+	handler func(*index.Index, http.ResponseWriter, *http.Request) (int, error)
+}
+
+func (hh httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	status, err := hh.handler(hh.store, w, r)
+
+	if err != nil {
+		switch status {
+		case http.StatusNotFound:
+			http.NotFound(w, r)
+		default:
+			http.Error(
+				w,
+				fmt.Sprintf(
+					"%s: %v",
+					http.StatusText(status),
+					err,
+				),
+				status,
+			)
+		}
+	}
+}
+
 func Serve(store *index.Index, staticDir string) error {
 	if staticDir != "" {
 		return renderStatic(store, staticDir)
 	}
 
-	context := &httpContext{store}
 	fmt.Println("Visit http://localhost:8080")
-	http.Handle("/", httpHandler{context, indexHandler})
-	http.Handle("/detail/", httpHandler{context, detailHandler})
-	http.Handle("/.images/", httpHandler{context, imageHandler})
+	http.Handle("/", httpHandler{store, indexHandler})
+	http.Handle("/detail/", httpHandler{store, detailHandler})
+	http.Handle("/.images/", httpHandler{store, imageHandler})
 	return http.ListenAndServe(":8080", nil)
 }
