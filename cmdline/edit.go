@@ -30,20 +30,32 @@ func handleEdit(store *index.Index, name string) error {
 			return err
 		}
 
-		git := util.GitNew(store.RepoDir())
+		git := util.NewGit(store.RepoDir())
 		for _, image := range recipe.Data.Images {
 			delete(images, image)
 		}
-		for image := range images {
-			git.Trap(git.Remove(image))
-		}
-		git.Trap(git.Add(pathName))
 
-		if git.HasChanges(true) {
-			git.Trap(git.Commit("Recipe changed"))
-		} else {
-			fmt.Println("Info: No changes. Nothing to do.")
-		}
+		git.WithTransaction(func() error {
+			for image := range images {
+				if err := git.Remove(image); err != nil {
+					return err
+				}
+			}
+
+			if err := git.Add(pathName); err != nil {
+				return err
+			}
+
+			if git.HasChanges(true) {
+				if err := git.Commit("Recipe changed"); err != nil {
+					return err
+				}
+			} else {
+				fmt.Println("Info: No changes. Nothing to do.")
+			}
+
+			return nil
+		})
 	} else {
 		fmt.Printf("Info: No Recipe found with the name '%s'\n", name)
 	}

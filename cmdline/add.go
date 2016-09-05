@@ -53,12 +53,13 @@ func handleAdd(store *index.Index, name, path string, force, quiet bool, argImag
 		return fmt.Errorf("Recipe '%s' already exists", name)
 	}
 
-	git := util.GitNew(repoDir)
+	git := util.NewGit(repoDir)
 	if err := recipe.Parse(pathName); err != nil {
 		return err
 	}
 
 	var images []string
+
 	imagePath := filepath.Join(
 		repoDir,
 		".images",
@@ -90,7 +91,6 @@ func handleAdd(store *index.Index, name, path string, force, quiet bool, argImag
 			}
 
 			images = append(images, relPath)
-			git.Trap(git.Add(imagePathDest))
 		}
 	} else {
 		for _, image := range recipe.Data.Images {
@@ -115,7 +115,6 @@ func handleAdd(store *index.Index, name, path string, force, quiet bool, argImag
 
 		if !recipe.ImageExists(relPath) {
 			images = append(images, relPath)
-			git.Trap(git.Add(imagePathDest))
 		}
 	}
 
@@ -124,18 +123,37 @@ func handleAdd(store *index.Index, name, path string, force, quiet bool, argImag
 	store.RecipeAdd(name)
 	recipe.Save(pathName)
 	store.Save()
-	git.Trap(git.Add(store.Filename()))
-	git.Trap(git.Add(pathName))
 
-	if git.HasChanges(true) {
-		if !recipeExists {
-			git.Trap(git.Commit("New recipe added"))
-		} else {
-			git.Trap(git.Commit("Image added to recipe"))
+	git.WithTransaction(func() error {
+		for _, image := range images {
+			if err := git.Add(image); err != nil {
+				return err
+			}
 		}
-	} else {
-		fmt.Println("Info: No new things here. Nothing to do.")
-	}
+
+		if err := git.Add(store.Filename()); err != nil {
+			return err
+		}
+
+		if err := git.Add(pathName); err != nil {
+			return err
+		}
+
+		if git.HasChanges(true) {
+			message := "New recipe added"
+			if recipeExists {
+				message = "Image added to recipe"
+			}
+
+			if err := git.Commit(message); err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Info: No new things here. Nothing to do.")
+		}
+
+		return nil
+	})
 
 	return nil
 }

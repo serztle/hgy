@@ -18,15 +18,33 @@ func handleRemove(store *index.Index, name string) error {
 			return err
 		}
 
-		git := util.GitNew(store.RepoDir())
 		recipe := index.Recipe{}
-		recipe.Parse(pathName)
-		for _, image := range recipe.Data.Images {
-			git.Trap(git.Rm(image))
+		if err := recipe.Parse(pathName); err != nil {
+			return err
 		}
-		git.Trap(git.Rm(name))
-		git.Trap(git.Add(store.Filename()))
-		git.Trap(git.Commit("Recipe removed"))
+
+		git := util.NewGit(store.RepoDir())
+		git.WithTransaction(func() error {
+			for _, image := range recipe.Data.Images {
+				if err := git.Rm(image); err != nil {
+					return err
+				}
+			}
+
+			if err := git.Rm(name); err != nil {
+				return err
+			}
+
+			if err := git.Add(store.Filename()); err != nil {
+				return err
+			}
+
+			if err := git.Commit("Recipe removed"); err != nil {
+				return err
+			}
+
+			return nil
+		})
 	} else {
 		fmt.Printf("Info: No Recipe found with the name '%s'\n", name)
 	}

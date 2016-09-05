@@ -10,7 +10,7 @@ type Git struct {
 	Dir string
 }
 
-func GitNew(dir string) Git {
+func NewGit(dir string) Git {
 	return Git{Dir: dir}
 }
 
@@ -24,18 +24,8 @@ func (g *Git) Exec(command string, args ...string) error {
 	repackArgs = append(repackArgs, args...)
 	if err := exec.Command("git", repackArgs...).Run(); err != nil {
 		return fmt.Errorf("Git command '%s' failed in '%s' (%v)", command, g.Dir, err)
-	} else {
-		return nil
 	}
-}
 
-func (g *Git) New(dir string) error {
-	g.Dir = dir
-	if info, err := os.Stat(g.Dir); err != nil {
-		return err
-	} else if info.IsDir() {
-		return fmt.Errorf("%s is not a directory!", g.Dir)
-	}
 	return nil
 }
 
@@ -57,12 +47,16 @@ func (g *Git) Trap(err error) {
 	}
 }
 
+func (g *Git) WithTransaction(fn func() error) {
+	g.Trap(fn())
+}
+
 func (g *Git) Exists() bool {
 	if err := g.Exec("status"); err != nil {
 		return false
-	} else {
-		return true
 	}
+
+	return true
 }
 
 func (g *Git) Init() error {
@@ -84,11 +78,12 @@ func (g *Git) HasChanges(cached bool) bool {
 	} else {
 		args = []string{"--exit-code"}
 	}
+
 	if err := g.Exec("diff", args...); err != nil {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func (g *Git) Rm(filename string) error {

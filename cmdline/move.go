@@ -34,18 +34,39 @@ func handleMove(store *index.Index, name string, newName string, force bool) err
 	store.RecipeAdd(newName)
 	store.Save()
 
-	git := util.GitNew(store.RepoDir())
-	git.Trap(git.Add(store.Filename()))
-	git.Trap(git.Add(name))
-	git.Trap(git.Add(filepath.Join(".images", name)))
-	git.Trap(git.Add(newName))
-	git.Trap(git.Add(filepath.Join(".images", newName)))
+	git := util.NewGit(store.RepoDir())
+	git.WithTransaction(func() error {
+		if err := git.Add(store.Filename()); err != nil {
+			return err
+		}
 
-	if git.HasChanges(true) {
-		git.Trap(git.Commit("Recipe moved"))
-	} else {
-		fmt.Println("Info: No changes. Nothing to do.")
-	}
+		if err := git.Add(name); err != nil {
+			return err
+		}
+
+		if err := git.Add(filepath.Join(".images", name)); err != nil {
+			return err
+		}
+
+		if err := git.Add(newName); err != nil {
+			return err
+		}
+
+		if err := git.Add(filepath.Join(".images", newName)); err != nil {
+			return err
+		}
+
+		if git.HasChanges(true) {
+			// TODO: Better commit message?
+			if err := git.Commit("Recipe moved"); err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Info: No changes. Nothing to do.")
+		}
+
+		return nil
+	})
 
 	return nil
 }

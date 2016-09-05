@@ -55,7 +55,7 @@ func needAtLeast(min int) checkFunc {
 }
 
 func CheckDir(dir string) error {
-	git := util.GitNew(dir)
+	git := util.NewGit(dir)
 	store := index.IndexNew(dir)
 
 	defaultError := fmt.Errorf("Seems not to be a nom archiv in '%s'", dir)
