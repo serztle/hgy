@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serztle/hgy/index"
-	"github.com/serztle/hgy/util"
+	"github.com/serztle/nom/index"
+	"github.com/serztle/nom/util"
 )
 
 func handleCook(store *index.Index, name string, persons int) error {
@@ -27,7 +27,7 @@ func handleCook(store *index.Index, name string, persons int) error {
 	recipe.CalcIngredients(persons, ingredients)
 	tmp := index.IngredientsMapToList(ingredients)
 
-	tmpfile, err := ioutil.TempFile(os.TempDir(), "hgy")
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "nom")
 	if err != nil {
 		return err
 	}

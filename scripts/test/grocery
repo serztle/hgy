@@ -1,16 +1,16 @@
 #!/usr/bin/env sh
 . ./scripts/test/setup
-. ./scripts/test/setup_hgy
+. ./scripts/test/setup_nom
 
-hgy grocery --persons 1 filet_wellington
-hgy grocery --persons 2 filet_wellington
-hgy grocery --persons 10 filet_wellington
+nom grocery --persons 1 filet_wellington
+nom grocery --persons 2 filet_wellington
+nom grocery --persons 10 filet_wellington
 
-hgy plan > $HGY_DIR/plan1
-hgy plan > $HGY_DIR/plan2
+nom plan > $NOM_DIR/plan1
+nom plan > $NOM_DIR/plan2
 
-hgy grocery --persons 4 --plan $HGY_DIR/plan1
-hgy grocery --persons 2 --plan $HGY_DIR/plan1 --plan $HGY_DIR/plan2
+nom grocery --persons 4 --plan $NOM_DIR/plan1
+nom grocery --persons 2 --plan $NOM_DIR/plan1 --plan $NOM_DIR/plan2
 
-hgy grocery --persons 1 schwaebischer_kartoffelsalat
-hgy grocery --persons 10 schwaebischer_kartoffelsalat
+nom grocery --persons 1 schwaebischer_kartoffelsalat
+nom grocery --persons 10 schwaebischer_kartoffelsalat

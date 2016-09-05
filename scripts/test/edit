@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 . ./scripts/test/setup
-. ./scripts/test/setup_hgy
+. ./scripts/test/setup_nom
 
-hgy edit foobar
-hgy --quiet add foobar
-hgy edit foobar
-hgy edit gulasch.yml
+nom edit foobar
+nom --quiet add foobar
+nom edit foobar
+nom edit gulasch.yml

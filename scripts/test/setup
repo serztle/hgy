@@ -2,9 +2,9 @@
 set -x
 set -e
 go install
-export HGY_DIR=/tmp/hgy
-export EX_DIR=$HGY_DIR/examples
-rm -rf $HGY_DIR
-mkdir -p $HGY_DIR
-cp examples $HGY_DIR -R
+export NOM_DIR=/tmp/nom
+export EX_DIR=$NOM_DIR/examples
+rm -rf $NOM_DIR
+mkdir -p $NOM_DIR
+cp examples $NOM_DIR -R
 set +e

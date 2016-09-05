@@ -16,7 +16,7 @@ type Index struct {
 
 func IndexNew(dir string) *Index {
 	return &Index{
-		indexPath: filepath.Join(dir, ".hgy"),
+		indexPath: filepath.Join(dir, ".nom"),
 		repoDir:   dir,
 		Recipes:   make(map[string]bool),
 	}

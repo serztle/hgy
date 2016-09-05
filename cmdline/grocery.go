@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/serztle/hgy/index"
+	"github.com/serztle/nom/index"
 	"gopkg.in/yaml.v2"
 )
 

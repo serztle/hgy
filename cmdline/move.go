@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/serztle/hgy/index"
-	"github.com/serztle/hgy/util"
+	"github.com/serztle/nom/index"
+	"github.com/serztle/nom/util"
 )
 
 func handleMove(store *index.Index, name string, newName string, force bool) error {

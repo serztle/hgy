@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/serztle/hgy/index"
-	"github.com/serztle/hgy/util"
+	"github.com/serztle/nom/index"
+	"github.com/serztle/nom/util"
 )
 
 func handleAdd(store *index.Index, name, path string, force, quiet bool, argImages []string) error {

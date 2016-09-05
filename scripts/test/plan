@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 . ./scripts/test/setup
-. ./scripts/test/setup_hgy
+. ./scripts/test/setup_nom
 
-hgy plan
-hgy plan 2016-08-01
-hgy plan 2016-08-01 2016-08-15
+nom plan
+nom plan 2016-08-01
+nom plan 2016-08-01 2016-08-15

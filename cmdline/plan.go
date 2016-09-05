@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/serztle/hgy/index"
+	"github.com/serztle/nom/index"
 	"gopkg.in/yaml.v2"
 )
 

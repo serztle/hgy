@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 . ./scripts/test/setup
 
-hgy init
-hgy init foo
+nom init
+nom init foo

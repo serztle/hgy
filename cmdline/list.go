@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/serztle/hgy/index"
+	"github.com/serztle/nom/index"
 )
 
 func handleList(store *index.Index, showImages bool) error {

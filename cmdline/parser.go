@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/serztle/hgy/index"
-	"github.com/serztle/hgy/util"
-	"github.com/serztle/hgy/view"
+	"github.com/serztle/nom/index"
+	"github.com/serztle/nom/util"
+	"github.com/serztle/nom/view"
 	"github.com/urfave/cli"
 )
 
@@ -58,7 +58,7 @@ func CheckDir(dir string) error {
 	git := util.GitNew(dir)
 	store := index.IndexNew(dir)
 
-	defaultError := fmt.Errorf("Seems not to be a hgy archiv in '%s'", dir)
+	defaultError := fmt.Errorf("Seems not to be a nom archiv in '%s'", dir)
 
 	gitExists := git.Exists()
 	indexExists := store.Exists()
@@ -96,7 +96,7 @@ func formatGroup(category string) string {
 
 func Main() {
 	app := cli.NewApp()
-	app.Name = "hgy"
+	app.Name = "nom"
 	app.Usage = "Mantain and manage a set of recipes in git."
 	app.Version = "v0.01 Raah Raah Bläh!"
 
@@ -116,9 +116,9 @@ func Main() {
 		},
 		cli.StringFlag{
 			Name:   "directory,d",
-			Usage:  "Alternative path to the hgy repository",
+			Usage:  "Alternative path to the nom repository",
 			Value:  ".",
-			EnvVar: "HGY_DIR",
+			EnvVar: "NOM_DIR",
 		},
 	}
 

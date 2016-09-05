@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/serztle/hgy/index"
-	"github.com/serztle/hgy/util"
+	"github.com/serztle/nom/index"
+	"github.com/serztle/nom/util"
 )
 
 func handleInit(repoDir string) error {
@@ -19,7 +19,7 @@ func handleInit(repoDir string) error {
 	store := index.IndexNew(repoDir)
 
 	if git.Exists() && store.Exists() {
-		return fmt.Errorf("There is already a hgy archiv in '%s'. Nothing to do.\n", repoDir)
+		return fmt.Errorf("There is already a nom archiv in '%s'. Nothing to do.\n", repoDir)
 	} else if git.Exists() {
 		return fmt.Errorf("There is already a git archiv in '%s'", repoDir)
 	} else if store.Exists() {
@@ -29,6 +29,6 @@ func handleInit(repoDir string) error {
 	git.Trap(git.Init())
 	git.Trap(store.Save())
 	git.Trap(git.Add(store.Filename()))
-	git.Trap(git.Commit("hgy initialized"))
+	git.Trap(git.Commit("nom initialized"))
 	return nil
 }
