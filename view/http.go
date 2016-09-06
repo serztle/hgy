@@ -20,7 +20,7 @@ const baseTemplate = `
 <head>
 <title>{{.Title}}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Vollkorn" />
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Vollkorn" />
 <style>
 
 .desc {
