@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/serztle/nom/index"
 	"github.com/serztle/nom/util"
@@ -126,7 +127,7 @@ const indexTemplate = `
         <center>
         {{if (ge (len .Data.Images) 1) }}
             <a target="_blank" href="detail/{{.Name}}.html">
-              <img class="image" src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}">
+              <img class="image" src="{{index .Data.Images 0}}" alt="{{.Data.Name}}">
             </a>
         {{else}}
             <a target="_blank" href="detail/{{.Name}}.html">
@@ -180,8 +181,8 @@ const detailTemplate = `
         <h2>Images</h2>
         {{range .Recipe.Data.Images}}
         <div>
-            <a target="_blank" href="{{$.Root}}/{{.}}">
-                <img class="image" src="{{$.Root}}/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
+            <a target="_blank" href="{{$.RootRel}}{{.}}">
+                <img class="image" src="{{$.RootRel}}{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
             </a>
         </div>
         {{end}}
@@ -209,13 +210,13 @@ func withTemplate(name, tmplTxt string, fn func() (interface{}, error)) (*bytes.
 	return &html, nil
 }
 
-func renderIndex(store *index.Index, root string) (*bytes.Buffer, error) {
+func renderIndex(store *index.Index) (*bytes.Buffer, error) {
 	return withTemplate("index", indexTemplate, func() (interface{}, error) {
 		recipes := []index.Recipe{}
 		for recipeName := range store.Recipes {
 			recipe := index.Recipe{}
-			recipe.Name = recipeName
 			recipePath := filepath.Join(store.RepoDir(), recipeName)
+			recipe.Name = recipeName
 			if err := recipe.Parse(recipePath); err != nil {
 				return nil, err
 			}
@@ -225,18 +226,16 @@ func renderIndex(store *index.Index, root string) (*bytes.Buffer, error) {
 
 		return struct {
 			Title   string
-			Root    string
 			Recipes []index.Recipe
 		}{
 			Title:   "Overview",
-			Root:    root,
 			Recipes: recipes,
 		}, nil
 	})
 }
 
 func indexHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (int, error) {
-	html, err := renderIndex(store, "")
+	html, err := renderIndex(store)
 	if err != nil {
 		return 500, err
 	}
@@ -244,7 +243,7 @@ func indexHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (i
 	return w.Write(html.Bytes())
 }
 
-func renderDetail(store *index.Index, root string, recipeName string) (*bytes.Buffer, error) {
+func renderDetail(store *index.Index, recipeName string) (*bytes.Buffer, error) {
 	return withTemplate("detail", detailTemplate, func() (interface{}, error) {
 		recipe := index.NewRecipe(store.RepoDir(), recipeName)
 		recipe.Name = recipeName
@@ -253,13 +252,13 @@ func renderDetail(store *index.Index, root string, recipeName string) (*bytes.Bu
 		}
 
 		return struct {
-			Title  string
-			Root   string
-			Recipe index.Recipe
+			Title   string
+			RootRel string
+			Recipe  index.Recipe
 		}{
-			Title:  recipe.Data.Name,
-			Root:   root,
-			Recipe: recipe,
+			Title:   recipe.Data.Name,
+			RootRel: strings.Repeat("../", strings.Count(recipeName, fmt.Sprintf("%c", os.PathSeparator))+1),
+			Recipe:  recipe,
 		}, nil
 	})
 }
@@ -268,7 +267,7 @@ func detailHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (
 	// TODO: Might crash.
 	recipeName := r.RequestURI[8 : len(r.RequestURI)-5]
 
-	html, err := renderDetail(store, "", recipeName)
+	html, err := renderDetail(store, recipeName)
 	if err != nil {
 		return 500, err
 	}
@@ -290,7 +289,7 @@ func imageHandler(store *index.Index, w http.ResponseWriter, r *http.Request) (i
 
 func renderStatic(store *index.Index, staticDir string) error {
 	dir := filepath.Clean(staticDir)
-	indexPage, err := renderIndex(store, dir)
+	indexPage, err := renderIndex(store)
 	if err != nil {
 		return err
 	}
@@ -309,7 +308,7 @@ func renderStatic(store *index.Index, staticDir string) error {
 	}
 
 	for recipeName := range store.Recipes {
-		detailPage, err := renderDetail(store, dir, recipeName)
+		detailPage, err := renderDetail(store, recipeName)
 		if err != nil {
 			return err
 		}
