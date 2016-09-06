@@ -13,7 +13,9 @@ func handleInit(repoDir string) error {
 		repoDir = "."
 	}
 	if stat, err := os.Stat(repoDir); os.IsNotExist(err) {
-		return os.MkdirAll(repoDir, 0700)
+		if err := os.MkdirAll(repoDir, 0700); err != nil {
+			return err
+		}
 	} else if !stat.IsDir() {
 		return fmt.Errorf("%s already exists and is not a directory", repoDir)
 	}

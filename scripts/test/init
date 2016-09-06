@@ -2,4 +2,6 @@
 . ./scripts/test/setup
 
 nom init
-nom init foo
+nom init $NOM_DIR/foo
+nom -d $NOM_DIR/bar init
+nom -d $NOM_DIR/bar init
