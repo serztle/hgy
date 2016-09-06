@@ -2,30 +2,30 @@ package cmdline
 
 import (
 	"fmt"
-	"path/filepath"
 	"sort"
 
 	"github.com/serztle/nom/index"
 )
 
 func handleList(store *index.Index, showImages bool) error {
-	recipePaths := []string{}
+	recipeNames := []string{}
 	for recipeName := range store.Recipes {
-		recipePaths = append(
-			recipePaths,
-			filepath.Join(store.RepoDir(), recipeName),
-		)
+		recipeNames = append(recipeNames, recipeName)
 	}
 
-	sort.Strings(recipePaths)
+	sort.Strings(recipeNames)
 
-	recipe := index.Recipe{}
-	for _, recipePath := range recipePaths {
-		if err := recipe.Parse(recipePath); err != nil {
+	recipes := []index.Recipe{}
+	for _, recipeName := range recipeNames {
+		recipe := index.NewRecipe(store.RepoDir(), recipeName)
+		if err := recipe.Load(); err != nil {
 			return err
 		}
+		recipes = append(recipes, recipe)
+	}
 
-		fmt.Printf("%s (%s)\n", filepath.Base(recipePath), recipe.Data.Name)
+	for _, recipe := range recipes {
+		fmt.Printf("%s (%s)\n", recipe.Name, recipe.Data.Name)
 
 		if showImages {
 			for _, image := range recipe.Data.Images {
