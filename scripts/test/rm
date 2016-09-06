@@ -1,9 +1,7 @@
 #!/usr/bin/env sh
 . ./scripts/test/setup
+. ./scripts/test/setup_nom
 
-nom init
-nom add gulasch /tmp/examples/gulasch.yml
-nom add filet /tmp/examples/filet_wellington.yml
-nom rm filet
 nom rm gulasch
+nom rm lasagne
 nom rm foobar
