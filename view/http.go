@@ -21,23 +21,8 @@ const baseTemplate = `
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Vollkorn" />
 <style>
-div.img {
-    margin: 5px;
-    border: 1px solid #ccc;
-    float: left;
-    width: 300px;
-}
 
-div.img:hover {
-    border: 1px solid #777;
-}
-
-div.img img {
-    width: 100%;
-    height: auto;
-}
-
-div.desc {
+.desc {
     padding: 15px;
     text-align: center;
 
@@ -60,33 +45,44 @@ a.seamless:active {
 	text-decoration:none;
 }
 
-#center-detail {
-    margin:    0 auto;
+.center {
+    margin: 0 auto;
     max-width: 50%;
     background-color: rgb(255,253,253);
 }
 
-#one-true { overflow: hidden; }
-#one-true .col {
+.gallery { 
+	overflow: hidden; 
+}
+.gallery .col {
   width: 27%;
   padding: 30px 3.15% 0;
   float: left;
   margin-bottom: -99999px;
   padding-bottom: 99999px;
 }
-
-#one-true .col:nth-child(1) { margin-left: 33.3%; }
-#one-true .col:nth-child(2) { margin-left: -66.3%; }
-#one-true .col:nth-child(3) { left: 0; }
-#one-true p { margin-bottom: 30px; } /* Bottom padding on col is busy */
-
-.col img {
-	box-shadow: 3px 3px 10px #AAAAAA;
-	border-radius: 4px;
-	transition: all 300ms ease;
+.gallery .col:nth-child(1) { 
+	margin-left: 33.3%; 
+}
+.gallery .col:nth-child(2) { 
+	margin-left: -66.3%; 
+}
+.gallery .col:nth-child(3) { 
+	left: 0; 
 }
 
-.col img:hover {
+.image {
+	box-shadow: 3px 3px 10px #AAAAAA;
+	border: 1px solid darkgrey;
+	border-radius: 4px;
+	transition: all 300ms ease;
+	width: 300px;
+	height: 200px;
+	object-fit: contain;
+	background-color: black;
+}
+
+.image:hover {
 	box-shadow: 9px 9px 10px #CCBBAA;
     transition: all 300ms ease;
 }
@@ -95,60 +91,23 @@ html {
     font-family: Vollkorn;
 }
 
-h1 {
+h1, h2 {
     font-family: Vollkorn;
-    font-size: 27px;
     font-style: normal;
     font-variant: normal;
-    font-weight: 600;
     line-height: 23px;
+}
+
+h1 {
+    font-size: 27px;
+    font-weight: 600;
     color: rgb(230,85,1);
 }
 
 h2 {
-    font-family: Vollkorn;
     font-size: 19px;
-    font-style: normal;
-    font-variant: normal;
-    font-weight: 500;
     line-height: 23px;
     color: rgb(210,75,0);
-}
-
-h3 {
-    font-family: Vollkorn;
-    font-size: 17px;
-    font-style: normal;
-    font-variant: normal;
-    font-weight: 400;
-    line-height: 23px;
-}
-
-p {
-    font-family: Vollkorn;
-    font-size: 15px;
-    font-style: normal;
-    font-variant: normal;
-    font-weight: 400;
-    line-height: 23px;
-}
-
-blockquote {
-    font-family: Vollkorn;
-    font-size: 17px;
-    font-style: normal;
-    font-variant: normal;
-    font-weight: 400;
-    line-height: 23px;
-}
-
-pre {
-    font-family: Vollkorn;
-    font-size: 11px;
-    font-style: normal;
-    font-variant: normal;
-    font-weight: 400;
-    line-height: 23px;
 }
 
 </style>
@@ -161,13 +120,17 @@ pre {
 
 const indexTemplate = `
 {{define "body"}}
-<div id="one-true">
+<div class="gallery">
 {{range .Recipes}}
 	<div class="col">
+		<center>
 		{{if (ge (len .Data.Images) 1) }}
-			<center>
 			<a target="_blank" href="detail/{{.Name}}.html">
-			  <img src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}" width="300" height="200">
+			  <img class="image" src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}">
+			</a>
+		{{else}}
+			<a target="_blank" href="detail/{{.Name}}.html">
+				<img class="image">
 			</a>
 		{{end}}
 		<a class="seamless" href="detail/{{.Name}}.html">
@@ -188,7 +151,7 @@ const detailTemplate = `
 	</ul>
 {{end}}
 {{define "body"}}
-<div id="center-detail">
+<div class="center">
     <h1 class="title">{{.Recipe.Data.Name}}</h1>
 
     <div class="duration">
@@ -213,15 +176,15 @@ const detailTemplate = `
 		<h2>Recipe</h2>{{template "section" .Recipe.Data.Recipe}}
 	</div>
 
-    <div class="images">
+    <div>
 		<h2>Images</h2>
-        {{range .Recipe.Data.Images}}
-        <div class="img">
-            <a target="_blank" href="{{$.Root}}/{{.}}">
-                <img src="{{$.Root}}/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
-            </a>
-        </div>
-        {{end}}
+		{{range .Recipe.Data.Images}}
+		<div>
+			<a target="_blank" href="{{$.Root}}/{{.}}">
+				<img class="image" src="{{$.Root}}/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
+			</a>
+		</div>
+		{{end}}
     </div>
 </div>
 {{end}}
