@@ -1,5 +1,2 @@
 grocery - Intelligente metrische Umrechnung
-cook - Neuer Befehl / Alle Zutaten da? / Vergange Zeit und angestrebte Zeit /
-     Aktuellen und nächsten Arbeitsschritt anzeigen (evtl. mit History)
-     (ncurses?)
 export - Nimmt Essensplan von suggest entgegen / Exporttyp (Taskwarrior, PDF, HTML)
