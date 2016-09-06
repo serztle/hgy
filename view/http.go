@@ -41,8 +41,8 @@ a {
 a.seamless:link,
 a.seamless:visited,
 a.seamless:active {
-	color:black;
-	text-decoration:none;
+    color:black;
+    text-decoration:none;
 }
 
 .center {
@@ -51,39 +51,39 @@ a.seamless:active {
     background-color: rgb(255,253,253);
 }
 
-.gallery { 
-	overflow: hidden; 
+.gallery {
+    overflow: hidden;
 }
 .gallery .col {
-  width: 27%;
-  padding: 30px 3.15% 0;
-  float: left;
-  margin-bottom: -99999px;
-  padding-bottom: 99999px;
+    width: 27%;
+    padding: 30px 3.15% 0;
+    float: left;
+    margin-bottom: -99999px;
+    padding-bottom: 99999px;
 }
-.gallery .col:nth-child(1) { 
-	margin-left: 33.3%; 
+.gallery .col:nth-child(1) {
+    margin-left: 33.3%;
 }
-.gallery .col:nth-child(2) { 
-	margin-left: -66.3%; 
+.gallery .col:nth-child(2) {
+    margin-left: -66.3%;
 }
-.gallery .col:nth-child(3) { 
-	left: 0; 
+.gallery .col:nth-child(3) {
+    left: 0;
 }
 
 .image {
-	box-shadow: 3px 3px 10px #AAAAAA;
-	border: 1px solid darkgrey;
-	border-radius: 4px;
-	transition: all 300ms ease;
-	width: 300px;
-	height: 200px;
-	object-fit: contain;
-	background-color: black;
+    box-shadow: 3px 3px 10px #AAAAAA;
+    border: 1px solid darkgrey;
+    border-radius: 4px;
+    transition: all 300ms ease;
+    width: 300px;
+    height: 200px;
+    object-fit: contain;
+    background-color: black;
 }
 
 .image:hover {
-	box-shadow: 9px 9px 10px #CCBBAA;
+    box-shadow: 9px 9px 10px #CCBBAA;
     transition: all 300ms ease;
 }
 
@@ -122,33 +122,33 @@ const indexTemplate = `
 {{define "body"}}
 <div class="gallery">
 {{range .Recipes}}
-	<div class="col">
-		<center>
-		{{if (ge (len .Data.Images) 1) }}
-			<a target="_blank" href="detail/{{.Name}}.html">
-			  <img class="image" src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}">
-			</a>
-		{{else}}
-			<a target="_blank" href="detail/{{.Name}}.html">
-				<img class="image">
-			</a>
-		{{end}}
-		<a class="seamless" href="detail/{{.Name}}.html">
-			<div class="desc">{{.Data.Name}}</div>
-		</a>
-		</center>
-	</div>
+    <div class="col">
+        <center>
+        {{if (ge (len .Data.Images) 1) }}
+            <a target="_blank" href="detail/{{.Name}}.html">
+              <img class="image" src="{{$.Root}}/{{index .Data.Images 0}}" alt="{{.Data.Name}}">
+            </a>
+        {{else}}
+            <a target="_blank" href="detail/{{.Name}}.html">
+                <img class="image">
+            </a>
+        {{end}}
+        <a class="seamless" href="detail/{{.Name}}.html">
+            <div class="desc">{{.Data.Name}}</div>
+        </a>
+        </center>
+    </div>
 {{end}}
 </div>
 {{end}}
 `
 const detailTemplate = `
 {{define "section"}}
-	<ul>
-	{{range .}}
-		<li>{{.}}</li>
-	{{end}}
-	</ul>
+    <ul>
+    {{range .}}
+        <li>{{.}}</li>
+    {{end}}
+    </ul>
 {{end}}
 {{define "body"}}
 <div class="center">
@@ -161,30 +161,30 @@ const detailTemplate = `
     </div>
 
     <div class="ingredients">
-		<h2>Ingredients</h2>
-		{{template "section" .Recipe.Data.Ingredients}}
-	</div>
+        <h2>Ingredients</h2>
+        {{template "section" .Recipe.Data.Ingredients}}
+    </div>
     <div class="spices">
-		<h2>Spices</h2>
-		{{template "section" .Recipe.Data.Spices}}
-	</div>
+        <h2>Spices</h2>
+        {{template "section" .Recipe.Data.Spices}}
+    </div>
     <div class="complementaries">
-		<h2>Complementaries</h2>
-		{{template "section" .Recipe.Data.Complementaries}}
-	</div>
+        <h2>Complementaries</h2>
+        {{template "section" .Recipe.Data.Complementaries}}
+    </div>
     <div class="recipe">
-		<h2>Recipe</h2>{{template "section" .Recipe.Data.Recipe}}
-	</div>
+        <h2>Recipe</h2>{{template "section" .Recipe.Data.Recipe}}
+    </div>
 
     <div>
-		<h2>Images</h2>
-		{{range .Recipe.Data.Images}}
-		<div>
-			<a target="_blank" href="{{$.Root}}/{{.}}">
-				<img class="image" src="{{$.Root}}/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
-			</a>
-		</div>
-		{{end}}
+        <h2>Images</h2>
+        {{range .Recipe.Data.Images}}
+        <div>
+            <a target="_blank" href="{{$.Root}}/{{.}}">
+                <img class="image" src="{{$.Root}}/{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
+            </a>
+        </div>
+        {{end}}
     </div>
 </div>
 {{end}}
