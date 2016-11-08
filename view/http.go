@@ -72,20 +72,26 @@ a.seamless:active {
     left: 0;
 }
 
+.cover {
+	width: 100%;
+	height: 200px;
+}
+
 .image {
     box-shadow: 3px 3px 10px #AAAAAA;
     border: 1px solid darkgrey;
     border-radius: 4px;
     transition: all 300ms ease;
-    width: 300px;
-    height: 200px;
-    object-fit: contain;
-    background-color: black;
+	width: 100%;
+	height: 100%;
+    object-fit: cover;
 }
 
 .image:hover {
     box-shadow: 9px 9px 10px #CCBBAA;
-    transition: all 300ms ease;
+	border-radius: 8px;
+	border: 3px solid orange;
+    transition: all 200ms ease;
 }
 
 html {
@@ -125,18 +131,20 @@ const indexTemplate = `
 {{range .Recipes}}
     <div class="col">
         <center>
-        {{if (ge (len .Data.Images) 1) }}
-            <a target="_blank" href="detail/{{.Name}}.html">
-              <img class="image" src="{{index .Data.Images 0}}" alt="{{.Data.Name}}">
-            </a>
-        {{else}}
-            <a target="_blank" href="detail/{{.Name}}.html">
-                <img class="image">
-            </a>
-        {{end}}
-        <a class="seamless" href="detail/{{.Name}}.html">
-            <div class="desc">{{.Data.Name}}</div>
-        </a>
+		<div class="cover">
+			{{if (ge (len .Data.Images) 1) }}
+				<a target="_blank" href="detail/{{.Name}}.html">
+				  <img class="image" src="{{index .Data.Images 0}}" alt="{{.Data.Name}}">
+				</a>
+			{{else}}
+				<a target="_blank" href="detail/{{.Name}}.html">
+					<img class="image">
+				</a>
+			{{end}}
+		</div>
+		<a class="seamless" href="detail/{{.Name}}.html">
+			<div class="desc">{{.Data.Name}}</div>
+		</a>
         </center>
     </div>
 {{end}}
@@ -182,7 +190,7 @@ const detailTemplate = `
         {{range .Recipe.Data.Images}}
         <div>
             <a target="_blank" href="{{$.RootRel}}{{.}}">
-                <img class="image" src="{{$.RootRel}}{{.}}" alt="{{$.Recipe.Data.Name}}" width="300" height="200">
+                <img class="image" src="{{$.RootRel}}{{.}}" alt="{{$.Recipe.Data.Name}}" width="200" height="100">
             </a>
         </div>
         {{end}}
